@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nsg_mobile/constants/color.dart';
 import 'package:nsg_mobile/constants/text_style.dart';
 
 class CustomTextFormFieldLabel extends StatelessWidget {
@@ -15,7 +16,7 @@ class CustomTextFormFieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final defaultTextStyle = NsgTextStyle.body3;
+    final defaultTextStyle = NsgTextStyle.body3.copyWith(color: NsgColor.black800);
     return DefaultTextStyle(
       style: defaultTextStyle.merge(labelStyle),
       child: Row(children: [label ?? Text(labelText!)]),
