@@ -5,14 +5,16 @@ abstract final class NsgColor {
   static const Color background = Color(0xFFFAFAFA);
   static const Color danger = Color(0xFFE32D00);
 
-  /// pointing
+  /// pointing (active / inactive 쌍)
   static const Color cafe = Color(0xFF6F4E37);
-  static const Color sing = Color(0xFFD800A9);
-  static const Color pc = Color(0xFF1464E4);
   static const Color cafeNon = Color(0xFF9B8677);
-  static const Color singNon = Color(0XFFDC54BF);
+  static const Color pc = Color(0xFF1464E4);
   static const Color pcNon = Color(0xFF6194E6);
+  static const Color sing = Color(0xFFD800A9);
+  static const Color singNon = Color(0XFFDC54BF);
+  static const Color eat = Color(0xFFD4661A);
   static const Color eatNon = Color(0xFFF49C54);
+  static const Color etc = Color(0xFF555555);
   static const Color etcNon = Color(0xFF9B9B9B);
 
   /// black

@@ -5,6 +5,7 @@ import 'package:nsg_mobile/features/auth/presentation/screens/splash_screen.dart
 import 'package:nsg_mobile/features/major/presentation/screens/major_screen.dart';
 import 'package:nsg_mobile/features/map/presentation/screens/map_screen.dart';
 import 'package:nsg_mobile/features/mypage/presentation/screens/mypage_screen.dart';
+import 'package:nsg_mobile/features/share/presentation/screens/post_list_screen.dart';
 import 'package:nsg_mobile/features/share/presentation/screens/share_screen.dart';
 import 'package:nsg_mobile/features/write/presentation/screens/write_screen.dart';
 
@@ -44,6 +45,18 @@ final router = GoRouter(
             GoRoute(
               path: '/share',
               builder: (context, state) => const ShareScreen(),
+              routes: [
+                GoRoute(
+                  path: 'popular',
+                  builder: (context, state) =>
+                      const PostListScreen(type: PostListType.popular),
+                ),
+                GoRoute(
+                  path: 'recent',
+                  builder: (context, state) =>
+                      const PostListScreen(type: PostListType.recent),
+                ),
+              ],
             ),
           ],
         ),
