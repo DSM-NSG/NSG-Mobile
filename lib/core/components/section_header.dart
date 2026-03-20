@@ -19,8 +19,15 @@ class SectionHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(title, style: titleStyle ?? NsgTextStyle.header2),
-        if (trailing != null) trailing!,
+        Expanded(
+          child: Text(
+            title,
+            style: titleStyle ?? NsgTextStyle.header2,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        if (trailing != null) ...[const SizedBox(height: 10), trailing!],
       ],
     );
   }

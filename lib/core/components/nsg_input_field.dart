@@ -20,7 +20,12 @@ class NsgInputField extends StatelessWidget {
     this.onChanged,
     this.textInputAction,
     this.keyboardType,
-  });
+  }) : assert(maxLines == null || maxLines > 0),
+       assert(maxLines == null || maxLines > 0),
+       assert(
+         maxLines == null || maxLines >= maxLines,
+         '최대 길이는 허용된 최대 길이보다 같거나 작아야합니다.',
+       );
 
   @override
   Widget build(BuildContext context) {

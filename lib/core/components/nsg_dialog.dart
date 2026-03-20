@@ -32,14 +32,23 @@ class NsgDialog extends StatelessWidget {
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => NsgDialog(
-        title: title,
-        content: content,
-        cancelLabel: cancelLabel,
-        confirmLabel: confirmLabel,
-        onCancel: onCancel ?? () => Navigator.of(ctx).pop(false),
-        onConfirm: onConfirm ?? () => Navigator.of(ctx).pop(true),
-      ),
+      builder: (ctx) {
+        final navigator = Navigator.of(ctx);
+        return NsgDialog(
+          title: title,
+          content: content,
+          cancelLabel: cancelLabel,
+          confirmLabel: confirmLabel,
+          onCancel: () {
+            onCancel?.call();
+            if (navigator.canPop()) navigator.pop(false);
+          },
+          onConfirm: () {
+            onConfirm?.call();
+            if (navigator.canPop()) navigator.pop(true);
+          },
+        );
+      },
     );
   }
 

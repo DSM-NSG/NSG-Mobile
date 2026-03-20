@@ -24,25 +24,23 @@ class PopularPostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  post.title,
-                  style: NsgTextStyle.header3,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                spacing,
-                Text(
-                  post.content,
-                  style: NsgTextStyle.body3.copyWith(color: NsgColor.black400),
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                post.title,
+                style: NsgTextStyle.header3,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              spacing,
+              Text(
+                post.content,
+                style: NsgTextStyle.body3.copyWith(color: NsgColor.black400),
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
           spacing,
           Row(
