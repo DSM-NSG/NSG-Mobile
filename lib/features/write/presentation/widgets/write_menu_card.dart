@@ -6,13 +6,11 @@ import 'package:nsg_mobile/features/write/domain/entities/write_category.dart';
 class WriteMenuCard extends StatelessWidget {
   final WriteCategory category;
   final VoidCallback? onTap;
-  final String? imagePath;
 
   const WriteMenuCard({
     super.key,
     required this.category,
     this.onTap,
-    this.imagePath,
   });
 
   @override
@@ -30,31 +28,32 @@ class WriteMenuCard extends StatelessWidget {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                child: Builder(
+                  builder: (context) {
+                    final lines = category.label.split('\n');
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Icon(
-                            category.icon,
-                            size: 20,
-                            color: NsgColor.black800,
-                          ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              category.icon,
+                              size: 20,
+                              color: NsgColor.black800,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(lines[0], style: NsgTextStyle.header2),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            category.label,
-                            style: NsgTextStyle.body2,
-                          ),
-                        ),
+                        if (lines.length > 1) ...[
+                          const SizedBox(height: 2),
+                          Text(lines[1], style: NsgTextStyle.header2),
+                        ],
                       ],
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -66,8 +65,8 @@ class WriteMenuCard extends StatelessWidget {
               child: SizedBox(
                 width: 180,
                 height: double.infinity,
-                child: imagePath != null
-                    ? Image.asset(imagePath!, fit: BoxFit.cover)
+                child: category.imagePath != null
+                    ? Image.asset(category.imagePath!, fit: BoxFit.cover)
                     : Container(color: NsgColor.black100),
               ),
             ),
