@@ -18,7 +18,7 @@ class WriteMenuCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 110,
+        height: 90,
         decoration: BoxDecoration(
           color: NsgColor.black50,
           borderRadius: BorderRadius.circular(8),
