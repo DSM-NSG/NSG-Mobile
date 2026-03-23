@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:nsg_mobile/constants/color.dart';
 
 class PhotoUploadButton extends StatelessWidget {
@@ -17,7 +18,7 @@ class PhotoUploadButton extends StatelessWidget {
           color: NsgColor.black50,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Icon(Icons.add, color: NsgColor.black400, size: 24),
+        child: const Icon(Symbols.add, color: NsgColor.black400, size: 24),
       ),
     );
   }
