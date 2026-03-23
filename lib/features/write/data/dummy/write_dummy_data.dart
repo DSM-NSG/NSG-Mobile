@@ -21,15 +21,15 @@ const writeCategories = [
     imagePath: 'assets/svg/school_write.png',
   ),
   WriteCategory(
-    label: '기타 꿀팁\n공유하기',
-    icon: Symbols.local_fire_department,
-    route: '/write/etc',
-    imagePath: 'assets/svg/etc_write.png',
-  ),
-  WriteCategory(
     label: '전공 꿀팁\n공유하기',
     icon: Symbols.laptop_mac,
     route: '/write/major',
     imagePath: 'assets/svg/major_write.png',
+  ),
+  WriteCategory(
+    label: '기타 꿀팁\n공유하기',
+    icon: Symbols.local_fire_department,
+    route: '/write/etc',
+    imagePath: 'assets/svg/etc_write.png',
   ),
 ];
