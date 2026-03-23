@@ -7,6 +7,7 @@ import 'package:nsg_mobile/features/map/presentation/screens/map_screen.dart';
 import 'package:nsg_mobile/features/mypage/presentation/screens/mypage_screen.dart';
 import 'package:nsg_mobile/features/share/presentation/screens/post_list_screen.dart';
 import 'package:nsg_mobile/features/share/presentation/screens/share_screen.dart';
+import 'package:nsg_mobile/features/write/presentation/screens/write_post_screen.dart';
 import 'package:nsg_mobile/features/write/presentation/screens/write_screen.dart';
 
 final router = GoRouter(
@@ -37,6 +38,33 @@ final router = GoRouter(
             GoRoute(
               path: '/write',
               builder: (context, state) => const WriteScreen(),
+              routes: [
+                GoRoute(
+                  path: 'place',
+                  builder: (context, state) =>
+                      const WritePostScreen(type: 'place'),
+                ),
+                GoRoute(
+                  path: 'dormitory',
+                  builder: (context, state) =>
+                      const WritePostScreen(type: 'dormitory'),
+                ),
+                GoRoute(
+                  path: 'school',
+                  builder: (context, state) =>
+                      const WritePostScreen(type: 'school'),
+                ),
+                GoRoute(
+                  path: 'etc',
+                  builder: (context, state) =>
+                      const WritePostScreen(type: 'etc'),
+                ),
+                GoRoute(
+                  path: 'major',
+                  builder: (context, state) =>
+                      const WritePostScreen(type: 'major'),
+                ),
+              ],
             ),
           ],
         ),
