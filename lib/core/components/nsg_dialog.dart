@@ -26,12 +26,13 @@ class NsgDialog extends StatelessWidget {
     required String content,
     required String cancelLabel,
     required String confirmLabel,
+    bool barrierDismissible = false,
     VoidCallback? onCancel,
     VoidCallback? onConfirm,
   }) {
     return showDialog<bool>(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: barrierDismissible,
       builder: (ctx) {
         final navigator = Navigator.of(ctx);
         return NsgDialog(
