@@ -110,13 +110,15 @@ class _WritePostScreenState extends State<WritePostScreen> {
                       const SizedBox(height: 20),
                       NsgInputField(controller: _titleController, hint: '제목'),
                       const SizedBox(height: 10),
-                      NsgInputField(
-                        controller: _locationController,
-                        hint: '장소를 입력해주세요.',
-                        readOnly: true,
-                        onTap: _openLocationSearch,
-                      ),
-                      const SizedBox(height: 10),
+                      if (widget.type == 'place') ...[
+                        NsgInputField(
+                          controller: _locationController,
+                          hint: '장소를 입력해주세요.',
+                          readOnly: true,
+                          onTap: _openLocationSearch,
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                       NsgInputField(
                         controller: _contentController,
                         hint: '내용',
@@ -126,12 +128,13 @@ class _WritePostScreenState extends State<WritePostScreen> {
                         keyboardType: TextInputType.multiline,
                       ),
                       const SizedBox(height: 20),
-                      CategoryFilter(
-                        categories: const ['카페', 'PC방', '노래방', '맛집', '기타'],
-                        selectedCategory: _selectedCategory,
-                        onSelected: (v) =>
-                            setState(() => _selectedCategory = v),
-                      ),
+                      if (widget.type == 'place')
+                        CategoryFilter(
+                          categories: const ['카페', 'PC방', '노래방', '맛집', '기타'],
+                          selectedCategory: _selectedCategory,
+                          onSelected: (v) =>
+                              setState(() => _selectedCategory = v),
+                        ),
                       const SizedBox(height: 20),
                       _PhotoSection(
                         images: _images,
