@@ -108,6 +108,7 @@ class _MenuCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
+        height: 56,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
           color: NsgColor.black50,
