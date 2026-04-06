@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nsg_mobile/core/layout/main_layout.dart';
 import 'package:nsg_mobile/features/auth/presentation/screens/login_screen.dart';
 import 'package:nsg_mobile/features/auth/presentation/screens/splash_screen.dart';
+import 'package:nsg_mobile/features/major/presentation/screens/major_post_list_screen.dart';
 import 'package:nsg_mobile/features/major/presentation/screens/major_screen.dart';
 import 'package:nsg_mobile/features/map/presentation/screens/map_screen.dart';
 import 'package:nsg_mobile/features/mypage/presentation/screens/mypage_screen.dart';
@@ -93,6 +94,20 @@ final router = GoRouter(
             GoRoute(
               path: '/major',
               builder: (context, state) => const MajorScreen(),
+              routes: [
+                GoRoute(
+                  path: 'popular',
+                  builder: (context, state) => const MajorPostListScreen(
+                    type: MajorPostListType.popular,
+                  ),
+                ),
+                GoRoute(
+                  path: 'recent',
+                  builder: (context, state) => const MajorPostListScreen(
+                    type: MajorPostListType.recent,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
