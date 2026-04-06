@@ -15,7 +15,7 @@ class MajorState {
     this.isSearchFocused = false,
   });
 
-  bool get showAutocomplete => isSearchFocused && searchText.isNotEmpty;
+  bool get showAutocomplete => isSearchFocused && searchText.trim().isNotEmpty;
 
   bool get showSearchResults =>
       submittedQuery != null && submittedQuery!.isNotEmpty;
@@ -41,7 +41,10 @@ class MajorNotifier extends Notifier<MajorState> {
   MajorState build() => const MajorState();
 
   void onSearchTextChanged(String text) {
-    state = state.copyWith(searchText: text, clearSubmittedQuery: text.isEmpty);
+    state = state.copyWith(
+      searchText: text,
+      clearSubmittedQuery: text.trim().isEmpty,
+    );
   }
 
   void onSearchFocusChanged(bool focused) {
@@ -49,10 +52,11 @@ class MajorNotifier extends Notifier<MajorState> {
   }
 
   void submitSearch(String query) {
-    if (query.trim().isEmpty) return;
+    final normalized = query.trim();
+    if (normalized.isEmpty) return;
     state = state.copyWith(
-      searchText: query,
-      submittedQuery: query,
+      searchText: normalized,
+      submittedQuery: normalized,
       isSearchFocused: false,
     );
   }
@@ -70,8 +74,9 @@ final autocompleteResultsProvider = Provider.family<List<String>, String>((
   ref,
   query,
 ) {
-  if (query.isEmpty) return [];
-  final q = query.toLowerCase();
+  final normalized = query.trim();
+  if (normalized.isEmpty) return [];
+  final q = normalized.toLowerCase();
   final starts = majorSearchSuggestions
       .where((s) => s.toLowerCase().startsWith(q))
       .toList();
@@ -87,8 +92,9 @@ final majorPopularPostsProvider = Provider.family<List<Post>, String?>((
   ref,
   query,
 ) {
-  if (query == null || query.isEmpty) return dummyMajorPopularPosts;
-  final q = query.toLowerCase();
+  final normalized = query?.trim();
+  if (normalized == null || normalized.isEmpty) return dummyMajorPopularPosts;
+  final q = normalized.toLowerCase();
   return dummyMajorPopularPosts
       .where(
         (p) =>
@@ -103,8 +109,9 @@ final majorRecentPostsProvider = Provider.family<List<Post>, String?>((
   ref,
   query,
 ) {
-  if (query == null || query.isEmpty) return dummyMajorRecentPosts;
-  final q = query.toLowerCase();
+  final normalized = query?.trim();
+  if (normalized == null || normalized.isEmpty) return dummyMajorRecentPosts;
+  final q = normalized.toLowerCase();
   return dummyMajorRecentPosts
       .where(
         (p) =>

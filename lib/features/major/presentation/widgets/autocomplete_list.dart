@@ -29,12 +29,14 @@ class _AutocompleteListState extends ConsumerState<AutocompleteList> {
     if (suggestions.isEmpty) return const SizedBox.shrink();
 
     final items = [
-      // 제안 목록
       ...suggestions.map(
         (s) => _AutocompleteItem(
           text: s,
           query: state.searchText,
-          onTap: () => ref.read(majorProvider.notifier).submitSearch(s),
+          onTap: () {
+            ref.read(majorProvider.notifier).submitSearch(s);
+            FocusScope.of(context).unfocus();
+          }
         ),
       ),
     ];
