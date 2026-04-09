@@ -2,6 +2,19 @@ import 'package:nsg_mobile/features/share/domain/entities/post.dart';
 
 const shareCategories = ['장소', '기숙사', '대마고', '기타'];
 
+const shareSearchSuggestions = [
+  '화장실',
+  '변기',
+  '기숙사 생활',
+  '기숙사 꿀팁',
+  '대마고 맛집',
+  '대마고 생활',
+  '장소 추천',
+  '청소 꿀팁',
+  '절약 방법',
+  '편의점',
+];
+
 List<Post> _posts(String category, int count, int startId) => List.generate(
       count,
       (i) => Post(

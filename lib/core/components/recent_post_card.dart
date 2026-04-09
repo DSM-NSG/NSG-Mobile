@@ -7,9 +7,16 @@ import 'package:nsg_mobile/features/share/domain/entities/post.dart';
 
 class RecentPostCard extends StatelessWidget {
   final Post post;
+  final int titleMaxLines;
+  final int contentMaxLines;
   static const spacing = SizedBox(height: 10);
 
-  const RecentPostCard({super.key, required this.post});
+  const RecentPostCard({
+    super.key,
+    required this.post,
+    this.titleMaxLines = 1,
+    this.contentMaxLines = 1,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +34,14 @@ class RecentPostCard extends StatelessWidget {
           Text(
             post.title,
             style: NsgTextStyle.header3.copyWith(color: NsgColor.black800),
-            maxLines: 2,
+            maxLines: titleMaxLines,
             overflow: TextOverflow.ellipsis,
           ),
           spacing,
           Text(
             post.content,
             style: NsgTextStyle.body3.copyWith(color: NsgColor.black400),
-            maxLines: 2,
+            maxLines: contentMaxLines,
             overflow: TextOverflow.ellipsis,
           ),
           spacing,
