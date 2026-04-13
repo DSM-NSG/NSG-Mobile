@@ -6,6 +6,7 @@ import 'package:nsg_mobile/features/major/presentation/screens/major_post_list_s
 import 'package:nsg_mobile/features/major/presentation/screens/major_screen.dart';
 import 'package:nsg_mobile/features/map/presentation/screens/map_screen.dart';
 import 'package:nsg_mobile/features/mypage/presentation/screens/mypage_screen.dart';
+import 'package:nsg_mobile/features/share/presentation/screens/post_detail_screen.dart';
 import 'package:nsg_mobile/features/share/presentation/screens/post_list_screen.dart';
 import 'package:nsg_mobile/features/share/presentation/screens/share_screen.dart';
 import 'package:nsg_mobile/features/write/presentation/screens/write_post_screen.dart';
@@ -84,6 +85,12 @@ final router = GoRouter(
                   path: 'recent',
                   builder: (context, state) =>
                       const PostListScreen(type: PostListType.recent),
+                ),
+                GoRoute(
+                  path: 'post/:postId',
+                  builder: (context, state) => PostDetailScreen(
+                    postId: state.pathParameters['postId']!,
+                  ),
                 ),
               ],
             ),
