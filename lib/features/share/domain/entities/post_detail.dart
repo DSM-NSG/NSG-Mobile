@@ -12,6 +12,12 @@ class PostDetail {
   final String? imagePath;
   final List<Comment> commentList;
 
+  final String? locationName;
+  final String? locationAddress;
+  final double? latitude;
+  final double? longitude;
+  final String? subCategory;
+
   const PostDetail({
     required this.id,
     required this.title,
@@ -23,5 +29,10 @@ class PostDetail {
     required this.likes,
     this.imagePath,
     this.commentList = const [],
+    this.locationName,
+    this.locationAddress,
+    this.latitude,
+    this.longitude,
+    this.subCategory,
   });
 }

@@ -41,6 +41,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>현재 위치를 기반으로 주변 장소를 보여드립니다.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>현재 위치를 기반으로 주변 장소를 보여드립니다.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>게시글에 첨부할 사진을 선택하기 위해 사진 라이브러리 접근이 필요합니다.</string>
 	<key>NSCameraUsageDescription</key>

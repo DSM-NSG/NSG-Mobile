@@ -66,6 +66,11 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     }
   }
 
+  void _selectItem(NaverLocalItem item) {
+    final result = LocationResult.fromNaverItem(item);
+    Navigator.of(context).pop(result);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,7 +122,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
         final item = _results[index];
         return _ResultTile(
           item: item,
-          onTap: () => Navigator.of(context).pop(item.displayAddress),
+          onTap: () => _selectItem(item),
         );
       },
     );

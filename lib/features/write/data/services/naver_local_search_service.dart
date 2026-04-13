@@ -8,8 +8,7 @@ import 'package:http/http.dart' as http;
 class NaverLocalSearchService {
   static const _clientId = 'YOUR_NAVER_CLIENT_ID';
   static const _clientSecret = 'YOUR_NAVER_CLIENT_SECRET';
-  static const _baseUrl =
-      'https://openapi.naver.com/v1/search/local.json';
+  static const _baseUrl = 'https://openapi.naver.com/v1/search/local.json';
 
   static Future<List<NaverLocalItem>> search(String query) async {
     if (query.trim().isEmpty) return [];
@@ -45,23 +44,24 @@ class NaverLocalSearchService {
 }
 
 class NaverLocalItem {
-  /// 장소명 (HTML 태그 포함 가능)
   final String title;
   final String category;
   final String address;
   final String roadAddress;
+  final String mapx;
+  final String mapy;
 
   const NaverLocalItem({
     required this.title,
     required this.category,
     required this.address,
     required this.roadAddress,
+    this.mapx = '',
+    this.mapy = '',
   });
 
-  /// 장소명에서 HTML 태그 제거
   String get plainTitle => title.replaceAll(RegExp(r'<[^>]*>'), '');
 
-  /// 표시용 주소 (도로명 우선)
   String get displayAddress =>
       roadAddress.isNotEmpty ? roadAddress : address;
 
@@ -71,6 +71,31 @@ class NaverLocalItem {
       category: json['category'] as String? ?? '',
       address: json['address'] as String? ?? '',
       roadAddress: json['roadAddress'] as String? ?? '',
+      mapx: json['mapx'] as String? ?? '',
+      mapy: json['mapy'] as String? ?? '',
+    );
+  }
+}
+
+class LocationResult {
+  final String name;
+  final String address;
+  final double? latitude;
+  final double? longitude;
+
+  const LocationResult({
+    required this.name,
+    required this.address,
+    this.latitude,
+    this.longitude,
+  });
+
+  static LocationResult fromNaverItem(NaverLocalItem item) {
+    return LocationResult(
+      name: item.plainTitle,
+      address: item.displayAddress,
+      latitude: null,
+      longitude: null,
     );
   }
 }

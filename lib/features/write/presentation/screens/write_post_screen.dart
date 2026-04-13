@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,7 @@ import 'package:nsg_mobile/features/share/domain/entities/post.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post_detail.dart';
 import 'package:nsg_mobile/features/share/presentation/providers/post_detail_provider.dart';
 import 'package:nsg_mobile/features/share/presentation/providers/share_provider.dart';
+import 'package:nsg_mobile/features/write/data/services/naver_local_search_service.dart';
 import 'package:nsg_mobile/features/write/presentation/screens/location_search_screen.dart';
 
 class WritePostScreen extends ConsumerStatefulWidget {
@@ -33,10 +35,13 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
   final _locationController = TextEditingController();
   final _contentController = TextEditingController();
   String? _selectedCategory;
+  LocationResult? _locationResult;
   final List<XFile> _images = [];
 
   bool get _isFormValid =>
-      _titleController.text.isNotEmpty && _contentController.text.isNotEmpty;
+      _titleController.text.isNotEmpty &&
+      _contentController.text.isNotEmpty &&
+      (widget.type != 'place' || _selectedCategory != null);
 
   @override
   void initState() {
@@ -70,11 +75,14 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
   }
 
   Future<void> _openLocationSearch() async {
-    final result = await Navigator.of(context).push<String>(
+    final result = await Navigator.of(context).push<LocationResult>(
       MaterialPageRoute(builder: (_) => const LocationSearchScreen()),
     );
     if (result != null && mounted) {
-      _locationController.text = result;
+      setState(() {
+        _locationResult = result;
+        _locationController.text = result.address;
+      });
     }
   }
 
@@ -101,6 +109,21 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
     final newId = 'user_${DateTime.now().millisecondsSinceEpoch}';
     final category = widget.type == 'place' ? '장소' : _categoryFromType;
 
+    double? lat;
+    double? lng;
+    if (widget.type == 'place') {
+      if (_locationResult?.latitude != null &&
+          _locationResult?.longitude != null) {
+        lat = _locationResult!.latitude;
+        lng = _locationResult!.longitude;
+      } else {
+        // 대덕대학교 근처 임의 좌표 (반경 ~300m)
+        final rng = Random();
+        lat = 36.3807 + (rng.nextDouble() - 0.5) * 0.006;
+        lng = 127.3862 + (rng.nextDouble() - 0.5) * 0.006;
+      }
+    }
+
     final newPost = Post(
       id: newId,
       title: _titleController.text.trim(),
@@ -108,6 +131,15 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
       category: category,
       likes: 0,
       comments: 0,
+      locationName: widget.type == 'place'
+          ? (_locationResult?.name ?? _titleController.text.trim())
+          : null,
+      locationAddress: widget.type == 'place'
+          ? (_locationResult?.address ?? '')
+          : null,
+      latitude: lat,
+      longitude: lng,
+      subCategory: widget.type == 'place' ? _selectedCategory : null,
     );
 
     final newDetail = PostDetail(
@@ -119,6 +151,11 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
       generation: isAnonymous ? null : currentUserGeneration,
       isOwn: true,
       likes: 0,
+      locationName: newPost.locationName,
+      locationAddress: newPost.locationAddress,
+      latitude: lat,
+      longitude: lng,
+      subCategory: newPost.subCategory,
     );
 
     ref
@@ -126,7 +163,13 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
         .update((map) => {...map, newId: newDetail});
     ref.read(shareNewPostsProvider.notifier).addPost(newPost);
 
-    if (mounted) context.go('/share/post/$newId');
+    if (mounted) {
+      if (widget.type == 'place') {
+        context.go('/map');
+      } else {
+        context.go('/share/post/$newId');
+      }
+    }
   }
 
   String get _screenTitle => switch (widget.type) {
