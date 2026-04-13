@@ -7,13 +7,16 @@ import 'package:nsg_mobile/features/share/domain/entities/post.dart';
 
 class PopularPostCard extends StatelessWidget {
   final Post post;
+  final VoidCallback? onTap;
   static const spacing = SizedBox(height: 10);
 
-  const PopularPostCard({super.key, required this.post});
+  const PopularPostCard({super.key, required this.post, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       width: 160,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -75,6 +78,7 @@ class PopularPostCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
       ),
     );
   }

@@ -9,6 +9,7 @@ class RecentPostCard extends StatelessWidget {
   final Post post;
   final int titleMaxLines;
   final int contentMaxLines;
+  final VoidCallback? onTap;
   static const spacing = SizedBox(height: 10);
 
   const RecentPostCard({
@@ -16,11 +17,14 @@ class RecentPostCard extends StatelessWidget {
     required this.post,
     this.titleMaxLines = 1,
     this.contentMaxLines = 1,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       width: double.infinity,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -75,6 +79,7 @@ class RecentPostCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
       ),
     );
   }
