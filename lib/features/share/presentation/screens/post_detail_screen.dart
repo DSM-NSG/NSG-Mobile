@@ -10,6 +10,7 @@ import 'package:nsg_mobile/features/share/domain/entities/comment.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post_detail.dart';
 import 'package:nsg_mobile/features/share/presentation/providers/post_detail_provider.dart';
 import 'package:nsg_mobile/features/share/presentation/providers/share_provider.dart';
+import 'package:uuid/uuid.dart';
 
 class PostDetailScreen extends ConsumerStatefulWidget {
   final String postId;
@@ -25,7 +26,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   String? _replyingToId;
   final _commentController = TextEditingController();
   final _focusNode = FocusNode();
-  int _idCounter = 1000;
+  static const _uuid = Uuid();
 
   @override
   void initState() {
@@ -62,7 +63,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
 
     final isAnonymous = result == true;
     final newComment = Comment(
-      id: 'new_${_idCounter++}',
+      id: _uuid.v4(),
       authorName: isAnonymous ? '익명' : currentUserName,
       generation: isAnonymous ? null : currentUserGeneration,
       content: text,
