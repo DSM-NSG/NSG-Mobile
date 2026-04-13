@@ -124,24 +124,3 @@ final mapSearchSuggestionsProvider = Provider.family<List<PlaceGroup>, String>((
   final q = query.toLowerCase();
   return groups.where((g) => g.locationName.toLowerCase().contains(q)).toList();
 });
-
-final mapSearchResultsProvider = Provider.family<List<PlaceGroup>, String>((
-  ref,
-  query,
-) {
-  if (query.trim().isEmpty) return [];
-  final groups = ref.watch(placeGroupsProvider);
-  final q = query.toLowerCase();
-  return groups
-      .where(
-        (g) =>
-            g.locationName.toLowerCase().contains(q) ||
-            g.locationAddress.toLowerCase().contains(q) ||
-            g.posts.any(
-              (p) =>
-                  p.title.toLowerCase().contains(q) ||
-                  p.content.toLowerCase().contains(q),
-            ),
-      )
-      .toList();
-});

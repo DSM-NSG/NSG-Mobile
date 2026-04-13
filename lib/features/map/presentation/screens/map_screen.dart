@@ -560,7 +560,7 @@ class _PlaceBottomSheet extends StatelessWidget {
 
   const _PlaceBottomSheet({required this.place});
 
-  Future<void> _openNaverMaps() async {
+  Future<void> _openNaverMaps(BuildContext context) async {
     final name = Uri.encodeComponent(place.locationName);
     final lat = place.latitude;
     final lng = place.longitude;
@@ -574,8 +574,10 @@ class _PlaceBottomSheet extends StatelessWidget {
 
     if (await canLaunchUrl(appUri)) {
       await launchUrl(appUri, mode: LaunchMode.externalApplication);
-    } else {
-      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    } else if (!await launchUrl(webUri, mode: LaunchMode.externalApplication)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('지도 앱을 열 수 없습니다.')),
+      );
     }
   }
 
@@ -689,7 +691,7 @@ class _PlaceBottomSheet extends StatelessWidget {
                       right: 20,
                       bottom: 20,
                       child: GestureDetector(
-                        onTap: _openNaverMaps,
+                        onTap: () => _openNaverMaps(context),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
