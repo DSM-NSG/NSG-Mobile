@@ -19,8 +19,8 @@ class ShareState {
     this.selectedCategory,
   });
 
-  bool get showAutocomplete =>
-      isSearchFocused && searchText.trim().isNotEmpty;
+  bool get showAutocomplete => isSearchFocused && searchText.trim().isNotEmpty;
+
   bool get showSearchResults =>
       submittedQuery != null && submittedQuery!.isNotEmpty;
 
@@ -82,32 +82,36 @@ class ShareNotifier extends Notifier<ShareState> {
       state = state.copyWith(selectedCategory: category);
 }
 
-final shareProvider =
-    NotifierProvider<ShareNotifier, ShareState>(ShareNotifier.new);
+final shareProvider = NotifierProvider<ShareNotifier, ShareState>(
+  ShareNotifier.new,
+);
 
-final shareAutocompleteProvider =
-    Provider.family<List<String>, String>((ref, query) {
+final shareAutocompleteProvider = Provider.family<List<String>, String>((
+  ref,
+  query,
+) {
   if (query.trim().isEmpty) return [];
   final q = query.toLowerCase();
   final all = shareSearchSuggestions;
-  final startsWith =
-      all.where((s) => s.toLowerCase().startsWith(q)).toList();
+  final startsWith = all.where((s) => s.toLowerCase().startsWith(q)).toList();
   final contains = all
-      .where((s) =>
-          !s.toLowerCase().startsWith(q) && s.toLowerCase().contains(q))
+      .where(
+        (s) => !s.toLowerCase().startsWith(q) && s.toLowerCase().contains(q),
+      )
       .toList();
   return [...startsWith, ...contains];
 });
 
-List<Post> _filterPosts(
-    List<Post> posts, String? query, String? category) {
+List<Post> _filterPosts(List<Post> posts, String? query, String? category) {
   var result = posts;
   if (query != null && query.isNotEmpty) {
     final q = query.toLowerCase();
     result = result
-        .where((p) =>
-            p.title.toLowerCase().contains(q) ||
-            p.content.toLowerCase().contains(q))
+        .where(
+          (p) =>
+              p.title.toLowerCase().contains(q) ||
+              p.content.toLowerCase().contains(q),
+        )
         .toList();
   }
   if (category != null) {
@@ -116,21 +120,60 @@ List<Post> _filterPosts(
   return result;
 }
 
-final shareFilteredPopularProvider = Provider.family<List<Post>,
-    ({String? query, String? category})>((ref, params) {
-  return _filterPosts(dummyPopularPosts, params.query, params.category);
-});
+final shareFilteredPopularProvider =
+    Provider.family<List<Post>, ({String? query, String? category})>((
+      ref,
+      params,
+    ) {
+      final deleted = ref.watch(shareDeletedIdsProvider);
+      final posts = dummyPopularPosts
+          .where((p) => !deleted.contains(p.id))
+          .toList();
+      return _filterPosts(posts, params.query, params.category);
+    });
 
-final shareFilteredRecentProvider = Provider.family<List<Post>,
-    ({String? query, String? category})>((ref, params) {
-  return _filterPosts(dummyRecentPosts, params.query, params.category);
-});
+final shareFilteredRecentProvider =
+    Provider.family<List<Post>, ({String? query, String? category})>((
+      ref,
+      params,
+    ) {
+      final newPosts = ref.watch(shareNewPostsProvider);
+      final deleted = ref.watch(shareDeletedIdsProvider);
+      final posts = [
+        ...newPosts,
+        ...dummyRecentPosts,
+      ].where((p) => !deleted.contains(p.id)).toList();
+      return _filterPosts(posts, params.query, params.category);
+    });
 
-final shareSearchResultsProvider = Provider.family<List<Post>,
-    ({String? query, String? category})>((ref, params) {
-  final seen = <String>{};
-  final all = [...dummyPopularPosts, ...dummyRecentPosts]
-      .where((p) => seen.add(p.id))
-      .toList();
-  return _filterPosts(all, params.query, params.category);
-});
+final shareSearchResultsProvider =
+    Provider.family<List<Post>, ({String? query, String? category})>((
+      ref,
+      params,
+    ) {
+      final newPosts = ref.watch(shareNewPostsProvider);
+      final deleted = ref.watch(shareDeletedIdsProvider);
+      final seen = <String>{};
+      final all = [
+        ...newPosts,
+        ...dummyPopularPosts,
+        ...dummyRecentPosts,
+      ].where((p) => !deleted.contains(p.id) && seen.add(p.id)).toList();
+      return _filterPosts(all, params.query, params.category);
+    });
+
+class ShareNewPostsNotifier extends Notifier<List<Post>> {
+  @override
+  List<Post> build() => [];
+
+  void addPost(Post post) => state = [post, ...state];
+
+  void removePost(String id) => state = state.where((p) => p.id != id).toList();
+}
+
+final shareNewPostsProvider =
+    NotifierProvider<ShareNewPostsNotifier, List<Post>>(
+      ShareNewPostsNotifier.new,
+    );
+
+final shareDeletedIdsProvider = StateProvider<Set<String>>((ref) => {});

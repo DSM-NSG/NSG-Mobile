@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:nsg_mobile/constants/color.dart';
@@ -10,18 +12,23 @@ import 'package:nsg_mobile/core/components/nsg_dialog.dart';
 import 'package:nsg_mobile/core/components/nsg_input_field.dart';
 import 'package:nsg_mobile/core/components/page_header.dart';
 import 'package:nsg_mobile/core/components/photo_upload_button.dart';
+import 'package:nsg_mobile/features/share/data/dummy/post_detail_dummy_data.dart';
+import 'package:nsg_mobile/features/share/domain/entities/post.dart';
+import 'package:nsg_mobile/features/share/domain/entities/post_detail.dart';
+import 'package:nsg_mobile/features/share/presentation/providers/post_detail_provider.dart';
+import 'package:nsg_mobile/features/share/presentation/providers/share_provider.dart';
 import 'package:nsg_mobile/features/write/presentation/screens/location_search_screen.dart';
 
-class WritePostScreen extends StatefulWidget {
+class WritePostScreen extends ConsumerStatefulWidget {
   final String type;
 
   const WritePostScreen({super.key, required this.type});
 
   @override
-  State<WritePostScreen> createState() => _WritePostScreenState();
+  ConsumerState<WritePostScreen> createState() => _WritePostScreenState();
 }
 
-class _WritePostScreenState extends State<WritePostScreen> {
+class _WritePostScreenState extends ConsumerState<WritePostScreen> {
   final _titleController = TextEditingController();
   final _locationController = TextEditingController();
   final _contentController = TextEditingController();
@@ -71,8 +78,14 @@ class _WritePostScreenState extends State<WritePostScreen> {
     }
   }
 
+  String get _categoryFromType => switch (widget.type) {
+    'dormitory' => '기숙사',
+    'school' => '대마고',
+    _ => '기타',
+  };
+
   Future<void> _onShare() async {
-    await NsgDialog.show(
+    final result = await NsgDialog.show(
       context,
       title: '게시글 작성',
       content:
@@ -81,6 +94,39 @@ class _WritePostScreenState extends State<WritePostScreen> {
       confirmLabel: '네',
       barrierDismissible: true,
     );
+
+    if (result == null || !mounted) return;
+
+    final isAnonymous = result == true;
+    final newId = 'user_${DateTime.now().millisecondsSinceEpoch}';
+    final category = widget.type == 'place' ? '장소' : _categoryFromType;
+
+    final newPost = Post(
+      id: newId,
+      title: _titleController.text.trim(),
+      content: _contentController.text.trim(),
+      category: category,
+      likes: 0,
+      comments: 0,
+    );
+
+    final newDetail = PostDetail(
+      id: newId,
+      title: _titleController.text.trim(),
+      content: _contentController.text.trim(),
+      category: category,
+      authorName: isAnonymous ? '익명' : currentUserName,
+      generation: isAnonymous ? null : currentUserGeneration,
+      isOwn: true,
+      likes: 0,
+    );
+
+    ref
+        .read(postDetailRegistryProvider.notifier)
+        .update((map) => {...map, newId: newDetail});
+    ref.read(shareNewPostsProvider.notifier).addPost(newPost);
+
+    if (mounted) context.go('/share/post/$newId');
   }
 
   String get _screenTitle => switch (widget.type) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nsg_mobile/constants/color.dart';
 import 'package:nsg_mobile/core/components/category_filter.dart';
 import 'package:nsg_mobile/features/share/data/dummy/share_dummy_data.dart';
@@ -70,8 +71,12 @@ class _PostListScreenState extends State<PostListScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       itemCount: _filteredPosts.length,
                       separatorBuilder: (_, __) => spacing,
-                      itemBuilder: (_, i) =>
-                          RecentPostCard(post: _filteredPosts[i]),
+                      itemBuilder: (_, i) => RecentPostCard(
+                        post: _filteredPosts[i],
+                        onTap: () => context.push(
+                          '/share/post/${_filteredPosts[i].id}',
+                        ),
+                      ),
                     ),
             ),
             spacing,

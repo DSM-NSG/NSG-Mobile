@@ -126,8 +126,12 @@ class _DefaultLayout extends ConsumerWidget {
                             itemCount: popularPosts.length,
                             separatorBuilder: (_, __) =>
                                 const SizedBox(width: 20),
-                            itemBuilder: (_, i) =>
-                                PopularPostCard(post: popularPosts[i]),
+                            itemBuilder: (_, i) => PopularPostCard(
+                              post: popularPosts[i],
+                              onTap: () => context.push(
+                                '/share/post/${popularPosts[i].id}',
+                              ),
+                            ),
                           ),
                   ),
                   _spacing20,
@@ -155,7 +159,11 @@ class _DefaultLayout extends ConsumerWidget {
                     ...recentPosts.map(
                       (p) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: RecentPostCard(post: p),
+                        child: RecentPostCard(
+                          post: p,
+                          onTap: () =>
+                              context.push('/share/post/${p.id}'),
+                        ),
                       ),
                     ),
                   _spacing20,
@@ -295,7 +303,10 @@ class _SearchContent extends ConsumerWidget {
         ...posts.map(
           (p) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: RecentPostCard(post: p),
+            child: RecentPostCard(
+              post: p,
+              onTap: () => context.push('/share/post/${p.id}'),
+            ),
           ),
         ),
         _spacing20,
