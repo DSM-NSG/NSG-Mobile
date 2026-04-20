@@ -23,7 +23,8 @@ class PostDetailScreen extends ConsumerStatefulWidget {
 
 class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   late PostDetail _post;
-  String? _replyingToId;
+  String? _showReplyBadgeId; // ... 탭 시 배지 표시 대상
+  String? _replyingToId;     // 배지 탭 후 실제 대댓글 모드 대상
   final _commentController = TextEditingController();
   final _focusNode = FocusNode();
   static const _uuid = Uuid();
@@ -73,6 +74,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     ref.read(postDetailProvider(widget.postId).notifier).addComment(newComment);
 
     setState(() {
+      _showReplyBadgeId = null;
       _replyingToId = null;
       _commentController.clear();
     });
@@ -113,9 +115,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
             Expanded(
               child: GestureDetector(
                 onTap: () {
-                  if (_replyingToId != null) {
-                    setState(() => _replyingToId = null);
-                  }
+                  setState(() {
+                    _showReplyBadgeId = null;
+                    _replyingToId = null;
+                  });
                   _focusNode.unfocus();
                 },
                 behavior: HitTestBehavior.translucent,
@@ -136,15 +139,22 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                         return [
                           _CommentRow(
                             comment: c,
-                            isReplyTarget: _replyingToId == c.id,
-                            onReplyTap: () {
+                            showBadge: _showReplyBadgeId == c.id,
+                            onMoreTap: () {
+                              // ... 탭: 배지 토글만 (대댓글 모드 아직 아님)
                               setState(() {
-                                _replyingToId = _replyingToId == c.id
-                                    ? null
-                                    : c.id;
+                                _showReplyBadgeId =
+                                    _showReplyBadgeId == c.id ? null : c.id;
+                                if (_showReplyBadgeId != c.id) {
+                                  _replyingToId = null;
+                                }
                               });
                             },
-                            onReplyConfirm: () => _focusNode.requestFocus(),
+                            onBadgeTap: () {
+                              // 배지 탭: 대댓글 모드 활성화 + 포커스
+                              setState(() => _replyingToId = c.id);
+                              _focusNode.requestFocus();
+                            },
                           ),
                           ...replies.map((r) => _ReplyRow(comment: r)),
                           const SizedBox(height: 14),
@@ -340,15 +350,15 @@ class _Avatar extends StatelessWidget {
 
 class _CommentRow extends StatelessWidget {
   final Comment comment;
-  final bool isReplyTarget;
-  final VoidCallback onReplyTap;
-  final VoidCallback? onReplyConfirm;
+  final bool showBadge;
+  final VoidCallback onMoreTap;
+  final VoidCallback onBadgeTap;
 
   const _CommentRow({
     required this.comment,
-    required this.isReplyTarget,
-    required this.onReplyTap,
-    this.onReplyConfirm,
+    required this.showBadge,
+    required this.onMoreTap,
+    required this.onBadgeTap,
   });
 
   @override
@@ -374,7 +384,7 @@ class _CommentRow extends StatelessWidget {
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: onReplyTap,
+                    onTap: onMoreTap,
                     behavior: HitTestBehavior.opaque,
                     child: const Padding(
                       padding: EdgeInsets.only(left: 8),
@@ -399,10 +409,10 @@ class _CommentRow extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (isReplyTarget) ...[
+                  if (showBadge) ...[
                     const SizedBox(width: 8),
                     GestureDetector(
-                      onTap: onReplyConfirm,
+                      onTap: onBadgeTap,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
