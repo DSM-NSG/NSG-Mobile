@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:nsg_mobile/constants/color.dart';
@@ -6,12 +7,15 @@ import 'package:nsg_mobile/constants/text_style.dart';
 import 'package:nsg_mobile/core/components/nsg_dialog.dart';
 import 'package:nsg_mobile/core/components/profile_header.dart';
 import 'package:nsg_mobile/features/auth/data/auth_service.dart';
+import 'package:nsg_mobile/features/mypage/presentation/providers/mypage_provider.dart';
 
-class MypageScreen extends StatelessWidget {
+class MypageScreen extends ConsumerWidget {
   const MypageScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userAsync = ref.watch(mypageProvider);
+
     return Scaffold(
       backgroundColor: NsgColor.background,
       body: SafeArea(
@@ -22,7 +26,15 @@ class MypageScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 20),
               _Card(
-                child: const ProfileHeader(name: '정지윤', generation: '10기'),
+                child: userAsync.when(
+                  data: (user) => ProfileHeader(
+                    generation: user.displayName,
+                    detail: user.profileSubtitle,
+                  ),
+                  loading: () => const _ProfileSkeleton(),
+                  error: (_, __) =>
+                      const ProfileHeader(generation: '-', detail: '-'),
+                ),
               ),
               const SizedBox(height: 20),
               _MenuCard(
@@ -51,9 +63,9 @@ class MypageScreen extends StatelessWidget {
       cancelLabel: '취소',
       confirmLabel: '로그아웃',
     );
-    if (confirmed == true && context.mounted) {
-      await AuthService.setLoggedIn(false);
-      context.go('/');
+    if (confirmed == true) {
+      await AuthService.logout();
+      if (context.mounted) context.go('/');
     }
   }
 
@@ -65,10 +77,46 @@ class MypageScreen extends StatelessWidget {
       cancelLabel: '취소',
       confirmLabel: '탈퇴',
     );
-    if (confirmed == true && context.mounted) {
-      await AuthService.setLoggedIn(false);
-      context.go('/');
+    if (confirmed == true) {
+      await AuthService.logout();
+      if (context.mounted) context.go('/');
     }
+  }
+}
+
+class _ProfileSkeleton extends StatelessWidget {
+  const _ProfileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const CircleAvatar(radius: 24, backgroundColor: NsgColor.black100),
+        const SizedBox(width: 20),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 60,
+              height: 14,
+              decoration: BoxDecoration(
+                color: NsgColor.black100,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              width: 120,
+              height: 12,
+              decoration: BoxDecoration(
+                color: NsgColor.black100,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 
@@ -118,10 +166,7 @@ class _MenuCard extends StatelessWidget {
           children: [
             Icon(icon, size: 20, color: NsgColor.black800),
             const SizedBox(width: 10),
-            Text(
-              label,
-              style: NsgTextStyle.body2
-            ),
+            Text(label, style: NsgTextStyle.body2),
           ],
         ),
       ),

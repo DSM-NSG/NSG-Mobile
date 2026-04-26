@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nsg_mobile/features/map/data/dummy/map_dummy_data.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post.dart';
 import 'package:nsg_mobile/features/share/presentation/providers/share_provider.dart';
 
@@ -76,15 +75,15 @@ final mapProvider = NotifierProvider<MapNotifier, MapState>(MapNotifier.new);
 final allPlacePostsProvider = Provider<List<Post>>((ref) {
   final newPosts = ref.watch(shareNewPostsProvider);
   final deleted = ref.watch(shareDeletedIdsProvider);
-  final userPlacePosts = newPosts
+  return newPosts
       .where(
-        (p) => p.category == '장소' && p.hasLocation && !deleted.contains(p.id),
+        (p) =>
+            p.board == PostBoard.share &&
+            p.category == '장소' &&
+            p.hasLocation &&
+            !deleted.contains(p.id),
       )
       .toList();
-  final dummyFiltered = dummyMapPosts
-      .where((p) => !deleted.contains(p.id))
-      .toList();
-  return [...userPlacePosts, ...dummyFiltered];
 });
 
 final placeGroupsProvider = Provider<List<PlaceGroup>>((ref) {

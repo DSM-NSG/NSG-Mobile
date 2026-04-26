@@ -125,10 +125,15 @@ final shareFilteredPopularProvider =
       ref,
       params,
     ) {
+      final newPosts = ref.watch(shareNewPostsProvider);
       final deleted = ref.watch(shareDeletedIdsProvider);
-      final posts = dummyPopularPosts
-          .where((p) => !deleted.contains(p.id))
-          .toList();
+      final posts =
+          newPosts
+              .where(
+                (p) => p.board == PostBoard.share && !deleted.contains(p.id),
+              )
+              .toList()
+            ..sort((a, b) => b.likes.compareTo(a.likes));
       return _filterPosts(posts, params.query, params.category);
     });
 
@@ -139,10 +144,9 @@ final shareFilteredRecentProvider =
     ) {
       final newPosts = ref.watch(shareNewPostsProvider);
       final deleted = ref.watch(shareDeletedIdsProvider);
-      final posts = [
-        ...newPosts,
-        ...dummyRecentPosts,
-      ].where((p) => !deleted.contains(p.id)).toList();
+      final posts = newPosts
+          .where((p) => p.board == PostBoard.share && !deleted.contains(p.id))
+          .toList();
       return _filterPosts(posts, params.query, params.category);
     });
 
@@ -154,11 +158,14 @@ final shareSearchResultsProvider =
       final newPosts = ref.watch(shareNewPostsProvider);
       final deleted = ref.watch(shareDeletedIdsProvider);
       final seen = <String>{};
-      final all = [
-        ...newPosts,
-        ...dummyPopularPosts,
-        ...dummyRecentPosts,
-      ].where((p) => !deleted.contains(p.id) && seen.add(p.id)).toList();
+      final all = newPosts
+          .where(
+            (p) =>
+                p.board == PostBoard.share &&
+                !deleted.contains(p.id) &&
+                seen.add(p.id),
+          )
+          .toList();
       return _filterPosts(all, params.query, params.category);
     });
 
@@ -169,6 +176,19 @@ class ShareNewPostsNotifier extends Notifier<List<Post>> {
   void addPost(Post post) => state = [post, ...state];
 
   void removePost(String id) => state = state.where((p) => p.id != id).toList();
+
+  void updatePostStats({required String id, int? likes, int? comments}) {
+    state = [
+      for (final post in state)
+        if (post.id == id)
+          post.copyWith(
+            likes: likes ?? post.likes,
+            comments: comments ?? post.comments,
+          )
+        else
+          post,
+    ];
+  }
 }
 
 final shareNewPostsProvider =

@@ -5,8 +5,8 @@ class ApiEndpoints {
   static const baseUrl = AppEnv.baseUrl;
 
   /// Places
-  static const  places = '/';
-  static String placeDelete(int id) => '/$id/';
+  static const places = '/';
+  static String placeDelete(String id) => '/$id/';
 
   /// Api
   static const schema = '/api/schema/';
@@ -15,23 +15,23 @@ class ApiEndpoints {
   static const majors = '/majors/';
 
   /// Comments
-  static String createComment(int postId) => '/posts/$postId/comments/';
-  static String deleteComment(int postId, commentId) => 'posts/$postId/comments/$commentId/delete/';
-  static String replyComment(int postId, commentId) => 'posts/$postId/comments/$commentId/replies/';
+  static String createComment(String postId) => '/posts/$postId/comments/';
+  static String deleteComment(String postId, String commentId) => 'posts/$postId/comments/$commentId/delete/';
+  static String replyComment(String postId, String commentId) => 'posts/$postId/comments/$commentId/replies/';
 
   /// Likes
-  static String toggleLike(int postId) => '/posts/$postId/like/';
+  static String toggleLike(String postId) => '/posts/$postId/like/';
 
   /// Major Posts
   static const majorPosts = '/posts/majors/';
-  static String majorPostDetail(int id) => '/posts/major/$id/';
-  static String deleteMajorPost(int id) => '/posts/major/$id/delete/';
+  static String majorPostDetail(String id) => '/posts/major/$id/';
+  static String deleteMajorPost(String id) => '/posts/major/$id/delete/';
   static const createMajorPost = '/posts/major/create/';
 
   /// Tips
   static const tipsPosts = '/posts/tips/';
-  static String tipsPostDetail(int id) => '/posts/tips/$id/';
-  static String deleteTipsPost(int id) => '/posts/tips/$id/delete/';
+  static String tipsPostDetail(String id) => '/posts/tips/$id/';
+  static String deleteTipsPost(String id) => '/posts/tips/$id/delete/';
   static const createTipsPost = '/posts/tips/create/';
 
   /// Auth
@@ -39,4 +39,5 @@ class ApiEndpoints {
 
   /// Users
   static const testUser = '/users/test/';
+  static const me = '/users/me/';
 }

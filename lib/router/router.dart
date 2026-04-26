@@ -52,13 +52,23 @@ final goRouterProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: 'place',
-                    builder: (_, __) =>
-                    const WritePostScreen(type: 'place'),
+                    builder: (_, __) => const WritePostScreen(type: 'place'),
+                  ),
+                  GoRoute(
+                    path: 'dormitory',
+                    builder: (_, __) => const WritePostScreen(type: 'dormitory'),
+                  ),
+                  GoRoute(
+                    path: 'school',
+                    builder: (_, __) => const WritePostScreen(type: 'school'),
                   ),
                   GoRoute(
                     path: 'major',
-                    builder: (_, __) =>
-                    const WritePostScreen(type: 'major'),
+                    builder: (_, __) => const WritePostScreen(type: 'major'),
+                  ),
+                  GoRoute(
+                    path: 'etc',
+                    builder: (_, __) => const WritePostScreen(type: 'etc'),
                   ),
                 ],
               ),

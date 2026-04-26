@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -21,15 +23,20 @@ class _LoginScreenState extends State<LoginScreen> {
   final _idController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   bool get _isButtonEnabled =>
-      _idController.text.isNotEmpty && _passwordController.text.isNotEmpty;
+      _idController.text.isNotEmpty &&
+      _passwordController.text.isNotEmpty &&
+      !_isLoading;
 
   @override
   void initState() {
     super.initState();
     _idController.addListener(_onChanged);
     _passwordController.addListener(_onChanged);
+    log('로그인 화면 진입', name: 'Login');
   }
 
   void _onChanged() => setState(() {});
@@ -41,6 +48,34 @@ class _LoginScreenState extends State<LoginScreen> {
     _idController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _onLogin() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    log('로그인 시도: id=${_idController.text}', name: 'Login');
+    try {
+      await AuthService.login(_idController.text.trim(), _passwordController.text);
+      log('로그인 성공', name: 'Login');
+      if (!mounted) return;
+      context.go('/share');
+    } on AuthException catch (e) {
+      log('로그인 실패: $e', name: 'Login');
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.message;
+        _isLoading = false;
+      });
+    } catch (e) {
+      log('로그인 오류: $e', name: 'Login');
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '네트워크 오류가 발생했습니다. 다시 시도해주세요.';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -90,6 +125,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
+                      if (_errorMessage != null) ...[
+                        middleSpacing,
+                        Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: NsgColor.danger,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -98,15 +143,9 @@ class _LoginScreenState extends State<LoginScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: NsgElevatedButton(
-                text: '로그인',
+                text: _isLoading ? '로그인 중...' : '로그인',
                 enabled: _isButtonEnabled,
-                onTap: _isButtonEnabled
-                    ? () async {
-                        await AuthService.setLoggedIn(true);
-                        if (!mounted) return;
-                        context.go('/share');
-                      }
-                    : null,
+                onTap: _isButtonEnabled ? _onLogin : null,
               ),
             ),
           ],

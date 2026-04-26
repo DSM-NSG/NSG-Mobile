@@ -1,3 +1,6 @@
+import 'dart:developer';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,11 +8,12 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:nsg_mobile/constants/color.dart';
 import 'package:nsg_mobile/constants/text_style.dart';
 import 'package:nsg_mobile/core/components/nsg_dialog.dart';
-import 'package:nsg_mobile/features/share/data/dummy/post_detail_dummy_data.dart';
+import 'package:nsg_mobile/features/mypage/presentation/providers/mypage_provider.dart';
 import 'package:nsg_mobile/features/share/domain/entities/comment.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post_detail.dart';
 import 'package:nsg_mobile/features/share/presentation/providers/post_detail_provider.dart';
 import 'package:nsg_mobile/features/share/presentation/providers/share_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 
 class PostDetailScreen extends ConsumerStatefulWidget {
@@ -22,9 +26,9 @@ class PostDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
-  late PostDetail _post;
-  String? _showReplyBadgeId; // ... 탭 시 배지 표시 대상
-  String? _replyingToId;     // 배지 탭 후 실제 대댓글 모드 대상
+  PostDetail? _post;
+  String? _showReplyBadgeId;
+  String? _replyingToId;
   final _commentController = TextEditingController();
   final _focusNode = FocusNode();
   static const _uuid = Uuid();
@@ -33,7 +37,15 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   void initState() {
     super.initState();
     final registry = ref.read(postDetailRegistryProvider);
-    _post = registry[widget.postId] ?? getPostDetail(widget.postId);
+    _post = registry[widget.postId];
+    if (_post == null) {
+      log('게시글을 찾을 수 없음: postId=${widget.postId}', name: 'PostDetail');
+    } else {
+      log(
+        '게시글 상세 진입: postId=${widget.postId}, title=${_post!.title}',
+        name: 'PostDetail',
+      );
+    }
   }
 
   @override
@@ -44,6 +56,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   void _toggleLike() {
+    log('좋아요 토글: postId=${widget.postId}', name: 'PostDetail');
     ref.read(postDetailProvider(widget.postId).notifier).toggleLike();
   }
 
@@ -63,14 +76,19 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     if (result == null || !mounted) return;
 
     final isAnonymous = result == true;
+    final user = ref.read(mypageProvider).valueOrNull;
     final newComment = Comment(
       id: _uuid.v4(),
-      authorName: isAnonymous ? '익명' : currentUserName,
-      generation: isAnonymous ? null : currentUserGeneration,
+      authorName: isAnonymous ? '익명' : (user?.displayName ?? '-'),
+      generation: isAnonymous ? null : user?.studentNumberLabel,
       content: text,
       parentId: _replyingToId,
     );
 
+    log(
+      '댓글 작성: postId=${widget.postId}, anonymous=$isAnonymous',
+      name: 'PostDetail',
+    );
     ref.read(postDetailProvider(widget.postId).notifier).addComment(newComment);
 
     setState(() {
@@ -92,6 +110,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
 
     if (result == true && mounted) {
       final id = widget.postId;
+      log('게시글 삭제: postId=$id', name: 'PostDetail');
       ref.read(shareNewPostsProvider.notifier).removePost(id);
       ref.read(shareDeletedIdsProvider.notifier).update((s) => {...s, id});
       context.pop();
@@ -100,6 +119,29 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_post == null) {
+      return Scaffold(
+        backgroundColor: NsgColor.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '게시글을 찾을 수 없습니다.',
+                    style: NsgTextStyle.body2.copyWith(
+                      color: NsgColor.black400,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final detailState = ref.watch(postDetailProvider(widget.postId));
     final topLevel = detailState.comments
         .where((c) => c.parentId == null)
@@ -141,17 +183,16 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                             comment: c,
                             showBadge: _showReplyBadgeId == c.id,
                             onMoreTap: () {
-                              // ... 탭: 배지 토글만 (대댓글 모드 아직 아님)
                               setState(() {
-                                _showReplyBadgeId =
-                                    _showReplyBadgeId == c.id ? null : c.id;
+                                _showReplyBadgeId = _showReplyBadgeId == c.id
+                                    ? null
+                                    : c.id;
                                 if (_showReplyBadgeId != c.id) {
                                   _replyingToId = null;
                                 }
                               });
                             },
                             onBadgeTap: () {
-                              // 배지 탭: 대댓글 모드 활성화 + 포커스
                               setState(() => _replyingToId = c.id);
                               _focusNode.requestFocus();
                             },
@@ -187,7 +228,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
               child: const Icon(Symbols.chevron_left, color: NsgColor.black800),
             ),
           ),
-          if (_post.isOwn)
+          if (_post?.isOwn == true)
             Align(
               alignment: Alignment.centerRight,
               child: GestureDetector(
@@ -206,6 +247,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   Widget _buildPostContent(PostDetailState detailState) {
+    final post = _post!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -214,33 +256,43 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
             const _Avatar(size: 40),
             const SizedBox(width: 10),
             Text(
-              _post.generation != null
-                  ? '${_post.authorName} ${_post.generation}'
-                  : _post.authorName,
+              post.generation != null
+                  ? '${post.authorName} ${post.generation}'
+                  : post.authorName,
               style: NsgTextStyle.body2.copyWith(color: NsgColor.black800),
             ),
           ],
         ),
         const SizedBox(height: 14),
         Text(
-          _post.title,
+          post.title,
           style: NsgTextStyle.header1.copyWith(color: NsgColor.black800),
         ),
         const SizedBox(height: 10),
         Text(
-          _post.content,
+          post.content,
           style: NsgTextStyle.body2.copyWith(color: NsgColor.black800),
         ),
-        if (_post.imagePath != null) ...[
+        if (post.allImagePaths.isNotEmpty) ...[
           const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              _post.imagePath!,
-              width: double.infinity,
-              fit: BoxFit.cover,
+          SizedBox(
+            height: 180,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: post.allImagePaths.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) => ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: _PostImage(path: post.allImagePaths[index]),
+              ),
             ),
           ),
+        ],
+        if (post.locationName != null &&
+            post.latitude != null &&
+            post.longitude != null) ...[
+          const SizedBox(height: 14),
+          _PlaceInfoCard(post: post),
         ],
         const SizedBox(height: 14),
         Row(
@@ -323,6 +375,126 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           GestureDetector(
             onTap: _submitComment,
             child: const Icon(Symbols.send, color: NsgColor.orange400, fill: 1),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PostImage extends StatelessWidget {
+  final String path;
+
+  const _PostImage({required this.path});
+
+  @override
+  Widget build(BuildContext context) {
+    final uri = Uri.tryParse(path);
+    final isRemote =
+        uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
+    return isRemote
+        ? Image.network(
+            path,
+            width: 220,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const _ImageFallback(),
+          )
+        : Image.file(
+            File(path),
+            width: 220,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const _ImageFallback(),
+          );
+  }
+}
+
+class _ImageFallback extends StatelessWidget {
+  const _ImageFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 220,
+      color: NsgColor.black50,
+      child: const Center(
+        child: Icon(Symbols.image, color: NsgColor.black300, size: 28),
+      ),
+    );
+  }
+}
+
+class _PlaceInfoCard extends StatelessWidget {
+  final PostDetail post;
+
+  const _PlaceInfoCard({required this.post});
+
+  Future<void> _openNaverRoute(BuildContext context) async {
+    final destinationName = Uri.encodeComponent(
+      post.locationName ?? post.title,
+    );
+    final appUri = Uri.parse(
+      'nmap://route/public?dlat=${post.latitude}&dlng=${post.longitude}&dname=$destinationName&appname=com.example.nsg_mobile',
+    );
+    final webUri = Uri.parse(
+      'https://map.naver.com/v5/search/${Uri.encodeComponent(post.locationName ?? post.title)}',
+    );
+
+    if (await canLaunchUrl(appUri)) {
+      await launchUrl(appUri, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    if (!await launchUrl(webUri, mode: LaunchMode.externalApplication)) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('네이버 지도를 열 수 없습니다.')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: NsgColor.black50,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            post.locationName ?? '',
+            style: NsgTextStyle.body2.copyWith(color: NsgColor.black800),
+          ),
+          if ((post.locationAddress ?? '').isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              post.locationAddress!,
+              style: NsgTextStyle.body4.copyWith(color: NsgColor.black400),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: GestureDetector(
+              onTap: () => _openNaverRoute(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: NsgColor.orange400,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  '길찾기',
+                  style: NsgTextStyle.body4.copyWith(color: Colors.white),
+                ),
+              ),
+            ),
           ),
         ],
       ),

@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             if (_isLoggedIn == false)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                 child: NsgElevatedButton(
                   text: '로그인',
                   onTap: () => context.go('/login'),

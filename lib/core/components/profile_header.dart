@@ -3,13 +3,13 @@ import 'package:nsg_mobile/constants/color.dart';
 import 'package:nsg_mobile/constants/text_style.dart';
 
 class ProfileHeader extends StatelessWidget {
-  final String name;
   final String generation;
+  final String detail;
 
   const ProfileHeader({
     super.key,
-    required this.name,
     required this.generation,
+    required this.detail,
   });
 
   @override
@@ -19,9 +19,14 @@ class ProfileHeader extends StatelessWidget {
       children: [
         const CircleAvatar(radius: 24, backgroundColor: NsgColor.orange400),
         const SizedBox(width: 20),
-        Text(name, style: NsgTextStyle.body2),
-        const SizedBox(width: 10),
-        Text(generation, style: NsgTextStyle.body2),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(generation, style: NsgTextStyle.header3),
+            const SizedBox(height: 4),
+            Text(detail, style: NsgTextStyle.body3.copyWith(color: NsgColor.black400)),
+          ],
+        ),
       ],
     );
   }

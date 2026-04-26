@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nsg_mobile/features/major/data/dummy/major_dummy_data.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post.dart';
+import 'package:nsg_mobile/features/share/presentation/providers/share_provider.dart';
 
 @immutable
 class MajorState {
@@ -88,14 +89,10 @@ final autocompleteResultsProvider = Provider.family<List<String>, String>((
   return [...starts, ...contains];
 });
 
-final majorPopularPostsProvider = Provider.family<List<Post>, String?>((
-  ref,
-  query,
-) {
-  final normalized = query?.trim();
-  if (normalized == null || normalized.isEmpty) return dummyMajorPopularPosts;
-  final q = normalized.toLowerCase();
-  return dummyMajorPopularPosts
+List<Post> _filterMajorPosts(List<Post> posts, String? query) {
+  if (query == null || query.isEmpty) return posts;
+  final q = query.toLowerCase();
+  return posts
       .where(
         (p) =>
             p.title.toLowerCase().contains(q) ||
@@ -103,21 +100,28 @@ final majorPopularPostsProvider = Provider.family<List<Post>, String?>((
             p.category.toLowerCase().contains(q),
       )
       .toList();
+}
+
+final majorPopularPostsProvider = Provider.family<List<Post>, String?>((
+  ref,
+  query,
+) {
+  final newPosts = ref.watch(shareNewPostsProvider);
+  final deleted = ref.watch(shareDeletedIdsProvider);
+  final majorPosts = newPosts
+      .where((p) => p.board == PostBoard.major && !deleted.contains(p.id))
+      .toList();
+  return _filterMajorPosts(majorPosts, query);
 });
 
 final majorRecentPostsProvider = Provider.family<List<Post>, String?>((
   ref,
   query,
 ) {
-  final normalized = query?.trim();
-  if (normalized == null || normalized.isEmpty) return dummyMajorRecentPosts;
-  final q = normalized.toLowerCase();
-  return dummyMajorRecentPosts
-      .where(
-        (p) =>
-            p.title.toLowerCase().contains(q) ||
-            p.content.toLowerCase().contains(q) ||
-            p.category.toLowerCase().contains(q),
-      )
+  final newPosts = ref.watch(shareNewPostsProvider);
+  final deleted = ref.watch(shareDeletedIdsProvider);
+  final majorPosts = newPosts
+      .where((p) => p.board == PostBoard.major && !deleted.contains(p.id))
       .toList();
+  return _filterMajorPosts(majorPosts, query);
 });

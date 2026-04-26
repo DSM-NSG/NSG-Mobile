@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +14,7 @@ import 'package:nsg_mobile/core/components/recent_post_card.dart';
 import 'package:nsg_mobile/features/map/presentation/providers/map_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const _kCenter = LatLng(36.3807, 127.3862);
+const _kFallbackCenter = LatLng(36.3807, 127.3862);
 const _kInitialZoom = 15.5;
 
 const _categoryColors =
@@ -59,6 +61,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   LatLng? _myLocation;
   bool _locationLoading = true;
+  bool _didMoveToMyLocation = false;
 
   @override
   void initState() {
@@ -93,23 +96,38 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         return;
       }
 
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null && mounted) {
+        _setMyLocation(
+          LatLng(lastKnown.latitude, lastKnown.longitude),
+          moveMap: !_didMoveToMyLocation,
+        );
+      }
+
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
         ),
-      );
+      ).timeout(const Duration(seconds: 8));
 
       if (!mounted) return;
 
-      final latLng = LatLng(position.latitude, position.longitude);
-      _mapController.move(latLng, _kInitialZoom);
-      setState(() {
-        _myLocation = latLng;
-        _locationLoading = false;
-      });
+      _setMyLocation(LatLng(position.latitude, position.longitude));
     } catch (_) {
       if (mounted) setState(() => _locationLoading = false);
     }
+  }
+
+  void _setMyLocation(LatLng latLng, {bool moveMap = true}) {
+    if (moveMap) {
+      _mapController.move(latLng, _kInitialZoom);
+      _didMoveToMyLocation = true;
+    }
+    if (!mounted) return;
+    setState(() {
+      _myLocation = latLng;
+      _locationLoading = false;
+    });
   }
 
   void _moveToMyLocation() {
@@ -139,7 +157,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => _PlaceBottomSheet(place: place),
+      builder: (_) => _PlaceBottomSheet(place: place, myLocation: _myLocation),
     );
   }
 
@@ -157,10 +175,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         children: [
           FlutterMap(
             mapController: _mapController,
-            options: const MapOptions(
+            options: MapOptions(
               maxZoom: 18.0,
               minZoom: 2.0,
-              initialCenter: _kCenter,
+              initialCenter: _myLocation ?? _kFallbackCenter,
               initialZoom: _kInitialZoom,
             ),
             children: [
@@ -234,6 +252,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     suggestions: suggestions,
                     onSelect: _selectSuggestion,
                   ),
+                if (_locationLoading && _myLocation == null)
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: _LocationStatusCard(message: '현재 위치를 확인하고 있어요.'),
+                  ),
               ],
             ),
           ),
@@ -252,6 +275,48 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 _WriteFab(onTap: () => context.push('/write/place')),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationStatusCard extends StatelessWidget {
+  final String message;
+
+  const _LocationStatusCard({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: NsgColor.background,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: NsgColor.orange400,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            message,
+            style: NsgTextStyle.body4.copyWith(color: NsgColor.black500),
           ),
         ],
       ),
@@ -327,7 +392,11 @@ class _LocationFab extends StatelessWidget {
                   color: NsgColor.orange400,
                 ),
               )
-            : const Icon(Symbols.my_location, color: NsgColor.orange400, size: 22),
+            : const Icon(
+                Symbols.my_location,
+                color: NsgColor.orange400,
+                size: 22,
+              ),
       ),
     );
   }
@@ -557,16 +626,18 @@ class _CategoryBadge extends StatelessWidget {
 
 class _PlaceBottomSheet extends StatelessWidget {
   final PlaceGroup place;
+  final LatLng? myLocation;
 
-  const _PlaceBottomSheet({required this.place});
+  const _PlaceBottomSheet({required this.place, this.myLocation});
 
   Future<void> _openNaverMaps(BuildContext context) async {
-    final name = Uri.encodeComponent(place.locationName);
-    final lat = place.latitude;
-    final lng = place.longitude;
+    final destinationName = Uri.encodeComponent(place.locationName);
+    final sourceQuery = myLocation != null
+        ? '&slat=${myLocation!.latitude}&slng=${myLocation!.longitude}&sname=${Uri.encodeComponent('현재 위치')}'
+        : '';
 
     final appUri = Uri.parse(
-      'nmap://place?lat=$lat&lng=$lng&name=$name&appname=com.example.nsg_mobile',
+      'nmap://route/public?dlat=${place.latitude}&dlng=${place.longitude}&dname=$destinationName$sourceQuery&appname=com.example.nsg_mobile',
     );
     final webUri = Uri.parse(
       'https://map.naver.com/v5/search/${Uri.encodeComponent(place.locationName)}',
@@ -575,9 +646,10 @@ class _PlaceBottomSheet extends StatelessWidget {
     if (await canLaunchUrl(appUri)) {
       await launchUrl(appUri, mode: LaunchMode.externalApplication);
     } else if (!await launchUrl(webUri, mode: LaunchMode.externalApplication)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('지도 앱을 열 수 없습니다.')),
-      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('지도 앱을 열 수 없습니다.')));
     }
   }
 
@@ -657,13 +729,13 @@ class _PlaceBottomSheet extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
-                      '위 장소가 포함된 글',
-                      style: NsgTextStyle.body2.copyWith(
-                        color: NsgColor.black800,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                  '위 장소가 포함된 글',
+                  style: NsgTextStyle.body2.copyWith(
+                    color: NsgColor.black800,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
+              ),
 
               const SizedBox(height: 12),
 
@@ -720,4 +792,3 @@ class _PlaceBottomSheet extends StatelessWidget {
     );
   }
 }
-

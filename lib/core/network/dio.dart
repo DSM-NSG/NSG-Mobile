@@ -2,10 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:nsg_mobile/core/network/auth_interceptor.dart';
+import 'package:nsg_mobile/core/network/log_interceptor.dart';
 import 'package:nsg_mobile/core/network/token_storage.dart';
 import 'package:nsg_mobile/router/router.dart';
 
 import 'api_endpoints.dart';
+
+final dioClientProvider = Provider<DioClient>((ref) => DioClient(ref: ref));
 
 class DioClient {
   final Dio dio;
@@ -21,13 +24,14 @@ class DioClient {
       ) {
     final tokenStorage = TokenStorage(const FlutterSecureStorage());
 
-    dio.interceptors.add(
+    dio.interceptors.addAll([
+      NsgLogInterceptor(),
       AuthInterceptor(
         tokenStorage: tokenStorage,
         onAuthFailed: () {
           ref.read(goRouterProvider).go('/login');
         },
       ),
-    );
+    ]);
   }
 }
