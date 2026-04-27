@@ -29,7 +29,7 @@ class MypageScreen extends ConsumerWidget {
                 child: userAsync.when(
                   data: (user) => ProfileHeader(
                     generation: user.displayName,
-                    detail: user.profileSubtitle,
+                    detail: user.cohortLabel,
                   ),
                   loading: () => const _ProfileSkeleton(),
                   error: (_, __) =>

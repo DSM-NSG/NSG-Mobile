@@ -262,7 +262,7 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
       content: _contentController.text.trim(),
       category: category,
       authorName: isAnonymous ? '익명' : (user?.displayName ?? '-'),
-      generation: isAnonymous ? null : user?.studentNumberLabel,
+      generation: isAnonymous ? null : user?.cohortLabel,
       isOwn: true,
       likes: 0,
       imagePath: _images.isNotEmpty ? _images.first.path : null,

@@ -80,7 +80,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final newComment = Comment(
       id: _uuid.v4(),
       authorName: isAnonymous ? '익명' : (user?.displayName ?? '-'),
-      generation: isAnonymous ? null : user?.studentNumberLabel,
+      generation: isAnonymous ? null : user?.cohortLabel,
       content: text,
       parentId: _replyingToId,
     );
