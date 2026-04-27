@@ -62,6 +62,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   LatLng? _myLocation;
   bool _locationLoading = true;
   bool _didMoveToMyLocation = false;
+  StreamSubscription<Position>? _positionSubscription;
 
   @override
   void initState() {
@@ -71,6 +72,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   @override
   void dispose() {
+    _positionSubscription?.cancel();
     _mapController.dispose();
     super.dispose();
   }
@@ -113,6 +115,20 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       if (!mounted) return;
 
       _setMyLocation(LatLng(position.latitude, position.longitude));
+      _positionSubscription?.cancel();
+      _positionSubscription =
+          Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 10,
+            ),
+          ).listen((position) {
+            if (!mounted) return;
+            _setMyLocation(
+              LatLng(position.latitude, position.longitude),
+              moveMap: !_didMoveToMyLocation,
+            );
+          });
     } catch (_) {
       if (mounted) setState(() => _locationLoading = false);
     }

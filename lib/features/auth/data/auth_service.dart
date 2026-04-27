@@ -14,10 +14,7 @@ class AuthService {
     try {
       final response = await ApiClient.dio.post(
         ApiEndpoints.login,
-        data: {
-          'account_id': accountId,
-          'password': password,
-        },
+        data: {'account_id': accountId, 'password': password},
       );
 
       final data = response.data as Map<String, dynamic>;
@@ -58,6 +55,10 @@ class AuthService {
     final json = prefs.getString(_keyUser);
     if (json == null) return null;
     return UserModel.fromJson(jsonDecode(json) as Map<String, dynamic>);
+  }
+
+  static Future<void> cacheUser(UserModel user) async {
+    await _saveUser(user);
   }
 
   static Future<void> _saveUser(UserModel user) async {

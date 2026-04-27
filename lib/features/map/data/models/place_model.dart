@@ -5,7 +5,7 @@ import 'package:nsg_mobile/features/share/domain/entities/post.dart';
 String _apiCategoryToApp(String api) =>
     const {
       'CAFE': '카페',
-      'PC_CAFE': 'PC방',
+      'PC_ROOM': 'PC방',
       'KARAOKE': '노래방',
       'RESTAURANT': '맛집',
       'ETC': '기타',
@@ -16,7 +16,7 @@ String _apiCategoryToApp(String api) =>
 String appCategoryToPlaceApi(String app) =>
     const {
       '카페': 'CAFE',
-      'PC방': 'PC_CAFE',
+      'PC방': 'PC_ROOM',
       '노래방': 'KARAOKE',
       '맛집': 'RESTAURANT',
       '기타': 'ETC',
@@ -30,7 +30,7 @@ class PlaceModel {
   final String author;
   final String title;
   final String description;
-  final String category; // API value: CAFE / PC_CAFE / KARAOKE / RESTAURANT / ETC
+  final String category; // API value: CAFE / PC_ROOM / KARAOKE / RESTAURANT / ETC
   final double latitude;
   final double longitude;
   final String? naverMapUrl;

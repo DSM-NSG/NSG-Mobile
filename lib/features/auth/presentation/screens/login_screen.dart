@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await AuthService.login(_idController.text.trim(), _passwordController.text);
       log('로그인 성공', name: 'Login');
       if (!mounted) return;
-      context.go('/share');
+      context.go('/map');
     } on AuthException catch (e) {
       log('로그인 실패: $e', name: 'Login');
       if (!mounted) return;

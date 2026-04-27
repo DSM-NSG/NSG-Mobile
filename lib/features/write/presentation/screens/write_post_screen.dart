@@ -1,7 +1,5 @@
 import 'dart:developer' as dev;
 import 'dart:io';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,6 +20,9 @@ import 'package:nsg_mobile/features/share/domain/entities/post_detail.dart';
 import 'package:nsg_mobile/features/share/presentation/providers/post_detail_provider.dart';
 import 'package:nsg_mobile/features/share/presentation/providers/share_provider.dart';
 import 'package:nsg_mobile/features/write/data/services/naver_local_search_service.dart';
+import 'package:nsg_mobile/features/map/data/models/place_model.dart';
+import 'package:nsg_mobile/features/map/data/services/place_service.dart';
+import 'package:nsg_mobile/features/share/data/services/tips_service.dart';
 import 'package:nsg_mobile/features/write/presentation/screens/location_search_screen.dart';
 
 class WritePostScreen extends ConsumerStatefulWidget {
@@ -45,11 +46,17 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
   final List<XFile> _images = [];
   final List<String> _keywords = [];
   bool _keywordFocused = false;
+  bool _isSubmitting = false;
 
   bool get _isFormValid =>
       _titleController.text.isNotEmpty &&
       _contentController.text.isNotEmpty &&
-      (widget.type != 'place' || _selectedCategory != null);
+      !_isSubmitting &&
+      (widget.type != 'place' ||
+          (_selectedCategory != null &&
+              _locationResult != null &&
+              _locationResult!.latitude != null &&
+              _locationResult!.longitude != null));
 
   List<String> get _keywordSuggestions {
     final q = _keywordController.text.trim().toLowerCase();
@@ -130,7 +137,7 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
     if (result != null && mounted) {
       setState(() {
         _locationResult = result;
-        _locationController.text = result.address;
+        _locationController.text = result.name;
       });
       dev.log('장소 선택: ${result.name}', name: 'Write');
     }
@@ -145,7 +152,7 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
 
   Future<void> _onShare() async {
     dev.log(
-      '공유 시도: type=${widget.type}, title=${_titleController.text.trim()}',
+      '공유 시도: type=\${widget.type}, title=\${_titleController.text.trim()}',
       name: 'Write',
     );
 
@@ -162,27 +169,82 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
     if (result == null || !mounted) return;
 
     final isAnonymous = result == true;
+
+    if (widget.type == 'place') {
+      await _onSharePlace(isAnonymous: isAnonymous);
+      return;
+    }
+
+    await _onShareTip(isAnonymous: isAnonymous);
+  }
+
+  Future<void> _onSharePlace({required bool isAnonymous}) async {
+    setState(() => _isSubmitting = true);
+    try {
+      // 1. Register the place (POST /)
+      final placeModel = await PlaceService.createPlace(
+        title: _locationResult!.name,
+        description: _contentController.text.trim(),
+        category: appCategoryToPlaceApi(_selectedCategory!),
+        latitude: _locationResult!.latitude!,
+        longitude: _locationResult!.longitude!,
+        naverMapUrl: _locationResult!.address,
+        isAnonymous: isAnonymous,
+      );
+      dev.log('장소 등록 성공: id=\${placeModel.id}', name: 'Write');
+
+      // 2. Create the tip post linked to the place (POST /posts/tips/create/)
+      final tipsPost = await TipsService.createPost(
+        title: _titleController.text.trim(),
+        body: _contentController.text.trim(),
+        category: 'PLACE',
+        isAnonymous: isAnonymous,
+        placeId: placeModel.id,
+      );
+      dev.log('장소 꿀팁 작성 성공: id=\${tipsPost.id}', name: 'Write');
+
+      // Register in local registry for immediate display
+      final postDetail = tipsPost.toPostDetail(isOwn: true);
+      ref
+          .read(postDetailRegistryProvider.notifier)
+          .update((map) => {...map, tipsPost.id: postDetail});
+
+      final newPost = Post(
+        id: tipsPost.id,
+        title: tipsPost.title,
+        content: tipsPost.body,
+        category: '장소',
+        subCategory: _selectedCategory,
+        locationName: placeModel.title,
+        locationAddress: _locationResult!.address,
+        latitude: placeModel.latitude,
+        longitude: placeModel.longitude,
+        likes: 0,
+        comments: 0,
+        board: PostBoard.share,
+      );
+      ref.read(shareNewPostsProvider.notifier).addPost(newPost);
+
+      if (mounted) context.go('/share/post/\${tipsPost.id}');
+    } catch (e) {
+      dev.log('장소 꿀팁 작성 실패: \$e', name: 'Write');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('장소 등록 중 오류가 발생했습니다. 다시 시도해주세요.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _onShareTip({required bool isAnonymous}) async {
     final user = ref.read(mypageProvider).valueOrNull;
-    final newId = 'user_${DateTime.now().millisecondsSinceEpoch}';
+    final newId = 'user_\${DateTime.now().millisecondsSinceEpoch}';
     final category = switch (widget.type) {
       'major' when _keywords.isNotEmpty => _keywords.first,
-      'place' => '장소',
       _ => _categoryFromType,
     };
-
-    double? lat;
-    double? lng;
-    if (widget.type == 'place') {
-      if (_locationResult?.latitude != null &&
-          _locationResult?.longitude != null) {
-        lat = _locationResult!.latitude;
-        lng = _locationResult!.longitude;
-      } else {
-        final rng = Random();
-        lat = 36.3807 + (rng.nextDouble() - 0.5) * 0.006;
-        lng = 127.3862 + (rng.nextDouble() - 0.5) * 0.006;
-      }
-    }
 
     final newPost = Post(
       id: newId,
@@ -192,15 +254,6 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
       likes: 0,
       comments: 0,
       board: widget.type == 'major' ? PostBoard.major : PostBoard.share,
-      locationName: widget.type == 'place'
-          ? (_locationResult?.name ?? _titleController.text.trim())
-          : null,
-      locationAddress: widget.type == 'place'
-          ? (_locationResult?.address ?? '')
-          : null,
-      latitude: lat,
-      longitude: lng,
-      subCategory: widget.type == 'place' ? _selectedCategory : null,
     );
 
     final newDetail = PostDetail(
@@ -214,11 +267,6 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
       likes: 0,
       imagePath: _images.isNotEmpty ? _images.first.path : null,
       imagePaths: _images.map((image) => image.path).toList(),
-      locationName: newPost.locationName,
-      locationAddress: newPost.locationAddress,
-      latitude: lat,
-      longitude: lng,
-      subCategory: newPost.subCategory,
     );
 
     ref
@@ -227,13 +275,11 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
     ref.read(shareNewPostsProvider.notifier).addPost(newPost);
 
     dev.log(
-      '공유 완료: postId=$newId, category=$category, anonymous=$isAnonymous',
+      '공유 완료: postId=\$newId, category=\$category, anonymous=\$isAnonymous',
       name: 'Write',
     );
 
-    if (mounted) {
-      context.go('/share/post/$newId');
-    }
+    if (mounted) context.go('/share/post/\$newId');
   }
 
   String get _screenTitle => switch (widget.type) {

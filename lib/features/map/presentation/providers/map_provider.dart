@@ -1,5 +1,8 @@
+import 'dart:developer';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nsg_mobile/features/map/data/services/place_service.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post.dart';
 import 'package:nsg_mobile/features/share/presentation/providers/share_provider.dart';
 
@@ -72,10 +75,24 @@ class MapNotifier extends Notifier<MapState> {
 
 final mapProvider = NotifierProvider<MapNotifier, MapState>(MapNotifier.new);
 
+/// Fetches the place list from the backend (GET /).
+final remotePlacePostsProvider = FutureProvider<List<Post>>((ref) async {
+  try {
+    final places = await PlaceService.getPlaces();
+    log('장소 목록 조회 성공: ${places.length}개', name: 'Map');
+    return places.map((p) => p.toPost()).toList();
+  } catch (e) {
+    log('장소 목록 조회 실패: $e', name: 'Map');
+    return [];
+  }
+});
+
 final allPlacePostsProvider = Provider<List<Post>>((ref) {
+  final remote = ref.watch(remotePlacePostsProvider).valueOrNull ?? [];
   final newPosts = ref.watch(shareNewPostsProvider);
   final deleted = ref.watch(shareDeletedIdsProvider);
-  return newPosts
+
+  final localPosts = newPosts
       .where(
         (p) =>
             p.board == PostBoard.share &&
@@ -84,6 +101,10 @@ final allPlacePostsProvider = Provider<List<Post>>((ref) {
             !deleted.contains(p.id),
       )
       .toList();
+
+  // Merge remote + local, deduplicate by id
+  final seen = <String>{};
+  return [...remote, ...localPosts].where((p) => seen.add(p.id)).toList();
 });
 
 final placeGroupsProvider = Provider<List<PlaceGroup>>((ref) {

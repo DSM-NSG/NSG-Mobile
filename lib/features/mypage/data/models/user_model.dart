@@ -49,7 +49,7 @@ class UserModel {
   String get detailLabel => '$grade학년 $classNum반 $num번';
   String get studentNumberLabel =>
       '$grade$classNum${num.toString().padLeft(2, '0')}';
-  String get profileSubtitle => studentNumberLabel;
+  String get profileSubtitle => cohort > 0 ? cohortLabel : studentNumberLabel;
 }
 
 const _sentinel = Object();
