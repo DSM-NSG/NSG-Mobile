@@ -152,7 +152,7 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
 
   Future<void> _onShare() async {
     dev.log(
-      '공유 시도: type=\${widget.type}, title=\${_titleController.text.trim()}',
+      '공유 시도: type=${widget.type}, title=${_titleController.text.trim()}',
       name: 'Write',
     );
 
@@ -188,10 +188,9 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
         category: appCategoryToPlaceApi(_selectedCategory!),
         latitude: _locationResult!.latitude!,
         longitude: _locationResult!.longitude!,
-        naverMapUrl: _locationResult!.address,
         isAnonymous: isAnonymous,
       );
-      dev.log('장소 등록 성공: id=\${placeModel.id}', name: 'Write');
+      dev.log('장소 등록 성공: id=${placeModel.id}', name: 'Write');
 
       // 2. Create the tip post linked to the place (POST /posts/tips/create/)
       final tipsPost = await TipsService.createPost(
@@ -201,16 +200,17 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
         isAnonymous: isAnonymous,
         placeId: placeModel.id,
       );
-      dev.log('장소 꿀팁 작성 성공: id=\${tipsPost.id}', name: 'Write');
+      dev.log('장소 꿀팁 작성 성공: id=${tipsPost.id}', name: 'Write');
 
       // Register in local registry for immediate display
       final postDetail = tipsPost.toPostDetail(isOwn: true);
+      final postId = tipsPost.id;
       ref
           .read(postDetailRegistryProvider.notifier)
-          .update((map) => {...map, tipsPost.id: postDetail});
+          .update((map) => {...map, postId: postDetail});
 
       final newPost = Post(
-        id: tipsPost.id,
+        id: postId,
         title: tipsPost.title,
         content: tipsPost.body,
         category: '장소',
@@ -225,9 +225,9 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
       );
       ref.read(shareNewPostsProvider.notifier).addPost(newPost);
 
-      if (mounted) context.go('/share/post/\${tipsPost.id}');
+      if (mounted) context.push('/share/post/$postId');
     } catch (e) {
-      dev.log('장소 꿀팁 작성 실패: \$e', name: 'Write');
+      dev.log('장소 꿀팁 작성 실패: $e', name: 'Write');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('장소 등록 중 오류가 발생했습니다. 다시 시도해주세요.')),
@@ -240,7 +240,7 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
 
   Future<void> _onShareTip({required bool isAnonymous}) async {
     final user = ref.read(mypageProvider).valueOrNull;
-    final newId = 'user_\${DateTime.now().millisecondsSinceEpoch}';
+    final newId = 'user_${DateTime.now().millisecondsSinceEpoch}';
     final category = switch (widget.type) {
       'major' when _keywords.isNotEmpty => _keywords.first,
       _ => _categoryFromType,
@@ -275,11 +275,11 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
     ref.read(shareNewPostsProvider.notifier).addPost(newPost);
 
     dev.log(
-      '공유 완료: postId=\$newId, category=\$category, anonymous=\$isAnonymous',
+      '공유 완료: postId=$newId, category=$category, anonymous=$isAnonymous',
       name: 'Write',
     );
 
-    if (mounted) context.go('/share/post/\$newId');
+    if (mounted) context.push('/share/post/$newId');
   }
 
   String get _screenTitle => switch (widget.type) {
