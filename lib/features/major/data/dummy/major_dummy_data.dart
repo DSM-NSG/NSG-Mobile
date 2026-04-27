@@ -1,0 +1,30 @@
+const majorTrendingTopics = [
+  (rank: 1, name: 'FE'),
+  (rank: 2, name: 'Flutter'),
+  (rank: 3, name: 'iOS'),
+  (rank: 4, name: 'Design'),
+  (rank: 5, name: 'BE'),
+  (rank: 6, name: 'GO'),
+  (rank: 7, name: 'Android'),
+  (rank: 8, name: 'React'),
+  (rank: 9, name: 'Python'),
+  (rank: 10, name: 'Java'),
+];
+
+const majorSearchSuggestions = [
+  'Swift',
+  'Flutter',
+  'iOS',
+  'Android',
+  'Design',
+  'BE',
+  'FE',
+  'GO',
+  'React',
+  'Vue',
+  'Angular',
+  'Node',
+  'Python',
+  'Java',
+  'Kotlin',
+];
