@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:nsg_mobile/core/config/app_env.dart';
 import 'package:nsg_mobile/core/network/auth_interceptor.dart';
+import 'package:nsg_mobile/core/network/log_interceptor.dart';
 import 'package:nsg_mobile/core/network/token_storage.dart';
 
 class ApiClient {
@@ -29,14 +30,13 @@ class ApiClient {
       ),
     );
 
-    d.interceptors.add(
+    d.interceptors.addAll([
+      NsgLogInterceptor(),
       AuthInterceptor(
         tokenStorage: tokenStorage,
-        onAuthFailed: () {
-          // 401 발생 시 토큰 삭제 (AuthInterceptor 내부에서 처리)
-        },
+        onAuthFailed: () {},
       ),
-    );
+    ]);
 
     return d;
   }

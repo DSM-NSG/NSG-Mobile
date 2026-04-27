@@ -23,6 +23,17 @@ String appCategoryToPlaceApi(String app) =>
     }[app] ??
     'ETC';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/// Safely extracts an author name from a field that may be a String or an object.
+String _parseAuthor(dynamic raw, [String fallback = '익명']) {
+  if (raw is String) return raw.isNotEmpty ? raw : fallback;
+  if (raw is Map<String, dynamic>) {
+    return (raw['name'] as String?) ?? (raw['username'] as String?) ?? fallback;
+  }
+  return fallback;
+}
+
 // ── Model ─────────────────────────────────────────────────────────────────────
 
 class PlaceModel {
@@ -52,7 +63,7 @@ class PlaceModel {
 
   factory PlaceModel.fromJson(Map<String, dynamic> json) => PlaceModel(
         id: json['id'] as String,
-        author: json['author'] as String? ?? '익명',
+        author: _parseAuthor(json['author']),
         title: json['title'] as String? ?? '',
         description: json['description'] as String? ?? '',
         category: json['category'] as String? ?? 'ETC',

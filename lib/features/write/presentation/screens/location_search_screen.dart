@@ -82,7 +82,11 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     });
 
     try {
-      final results = await NaverLocalSearchService.search(query);
+      final results = await NaverLocalSearchService.search(
+        query,
+        nearLat: _myLocation?.latitude,
+        nearLon: _myLocation?.longitude,
+      );
       if (mounted) {
         if (results.isNotEmpty) {
           _mapController.move(

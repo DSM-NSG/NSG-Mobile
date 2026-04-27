@@ -78,7 +78,7 @@ class _DefaultLayout extends ConsumerWidget {
           child: userAsync.when(
             data: (user) => ProfileHeader(
               generation: user.displayName,
-              detail: user.profileSubtitle,
+              detail: user.cohortLabel,
             ),
             loading: () => const ProfileHeader(generation: '-', detail: '-'),
             error: (e, _) {

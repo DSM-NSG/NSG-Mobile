@@ -2,6 +2,16 @@ import 'package:nsg_mobile/features/share/domain/entities/comment.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post_detail.dart';
 
+// ── Author helper ────────────────────────────────────────────────────────────
+
+String _parseAuthor(dynamic raw, [String fallback = '알 수 없음']) {
+  if (raw is String) return raw.isNotEmpty ? raw : fallback;
+  if (raw is Map<String, dynamic>) {
+    return (raw['name'] as String?) ?? (raw['username'] as String?) ?? fallback;
+  }
+  return fallback;
+}
+
 // ── Category helpers ────────────────────────────────────────────────────────
 
 String apiCategoryToApp(String api) =>
@@ -55,7 +65,7 @@ class TipsPostModel {
 
   factory TipsPostModel.fromJson(Map<String, dynamic> json) => TipsPostModel(
     id: json['id'] as String,
-    author: json['author'] as String? ?? '알 수 없음',
+    author: _parseAuthor(json['author']),
     title: json['title'] as String? ?? '',
     apiCategory: json['category'] as String? ?? 'ETC',
     likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
@@ -94,7 +104,7 @@ class TipsCommentModel {
   factory TipsCommentModel.fromJson(Map<String, dynamic> json) =>
       TipsCommentModel(
         id: json['id'] as String? ?? '',
-        author: json['author'] as String? ?? '알 수 없음',
+        author: _parseAuthor(json['author']),
         content: json['content'] as String? ?? '',
         isAnonymous: json['is_anonymous'] == true,
         parentId: json['parent_id'] as String?,
@@ -158,7 +168,7 @@ class TipsPostDetailModel {
 
     return TipsPostDetailModel(
       id: json['id'] as String,
-      author: json['author'] as String? ?? '알 수 없음',
+      author: _parseAuthor(json['author']),
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
       apiCategory: json['category'] as String? ?? 'ETC',

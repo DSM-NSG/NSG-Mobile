@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:nsg_mobile/core/network/api_client.dart';
 import 'package:nsg_mobile/core/network/api_endpoints.dart';
 import 'package:nsg_mobile/features/map/data/models/place_model.dart';
@@ -36,6 +38,10 @@ class PlaceService {
     String naverMapUrl = '',
     bool isAnonymous = false,
   }) async {
+    log(
+      '장소 등록 요청: title=$title, category=$category, lat=$latitude, lon=$longitude',
+      name: 'PlaceService',
+    );
     final response = await ApiClient.dio.post(
       ApiEndpoints.places,
       data: {
@@ -44,10 +50,11 @@ class PlaceService {
         'category': category,
         'latitude': latitude,
         'longitude': longitude,
-        'naver_map_url': naverMapUrl,
+        if (naverMapUrl.isNotEmpty) 'naver_map_url': naverMapUrl,
         'is_anonymous': isAnonymous,
       },
     );
+    log('장소 등록 응답: ${response.statusCode} ${response.data}', name: 'PlaceService');
     return PlaceModel.fromJson(response.data as Map<String, dynamic>);
   }
 

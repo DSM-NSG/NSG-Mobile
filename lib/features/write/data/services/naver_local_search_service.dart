@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:developer';
+import 'dart:developer' as dev;
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 
@@ -11,12 +12,22 @@ class NaverLocalSearchService {
     ),
   );
   static const _baseUrl = 'https://nominatim.openstreetmap.org/search';
-  static const _southKoreaViewBox = '124.5,38.9,131.9,33.0';
+  static const _koreaViewBox = '124.5,38.9,131.9,33.0';
 
-  static Future<List<NaverLocalItem>> search(String query) async {
+  static Future<List<NaverLocalItem>> search(
+    String query, {
+    double? nearLat,
+    double? nearLon,
+  }) async {
     if (query.trim().isEmpty) return [];
 
-    log('장소 검색 시작: "$query"', name: 'LocationSearch');
+    final nearInfo = nearLat != null ? ' (근처 $nearLat,$nearLon)' : '';
+    dev.log('장소 검색 시작: "$query"$nearInfo', name: 'LocationSearch');
+
+    // When the user's location is known, bias the search with a ~30 km viewbox
+    final viewbox = (nearLat != null && nearLon != null)
+        ? '${nearLon - 0.3},${nearLat + 0.3},${nearLon + 0.3},${nearLat - 0.3}'
+        : _koreaViewBox;
 
     final response = await _dio.get(
       _baseUrl,
@@ -36,31 +47,30 @@ class NaverLocalSearchService {
         'addressdetails': 1,
         'dedupe': 1,
         'countrycodes': 'kr',
-        'viewbox': _southKoreaViewBox,
+        'viewbox': viewbox,
         'namedetails': 1,
         'accept-language': 'ko-KR,ko,en',
       },
     );
 
     if (response.statusCode != 200 || response.data == null) {
-      log('장소 검색 실패: status=${response.statusCode}', name: 'LocationSearch');
+      dev.log('장소 검색 실패: status=${response.statusCode}', name: 'LocationSearch');
       throw Exception('검색 API 오류: ${response.statusCode}');
     }
 
-    // Dio may return already-parsed List or a raw JSON String depending on content-type
     final List<dynamic> rawList;
     if (response.data is List) {
       rawList = response.data as List<dynamic>;
     } else if (response.data is String) {
       rawList = jsonDecode(response.data as String) as List<dynamic>;
     } else {
-      log('장소 검색 응답 형식 오류: ${response.data.runtimeType}', name: 'LocationSearch');
+      dev.log('장소 검색 응답 형식 오류: ${response.data.runtimeType}', name: 'LocationSearch');
       throw Exception('예상치 못한 응답 형식: ${response.data.runtimeType}');
     }
 
-    log('장소 검색 결과: ${rawList.length}개', name: 'LocationSearch');
+    dev.log('장소 검색 원본 결과: ${rawList.length}개', name: 'LocationSearch');
 
-    final items = rawList
+    var items = rawList
         .whereType<Map<String, dynamic>>()
         .map(NaverLocalItem.fromJson)
         .where((item) => item.isInSouthKorea)
@@ -75,8 +85,22 @@ class NaverLocalSearchService {
         })
         .toList();
 
-    log('장소 검색 최종 결과: ${items.length}개', name: 'LocationSearch');
+    // Sort by distance to user's location when available
+    if (nearLat != null && nearLon != null) {
+      items.sort(
+        (a, b) => _distanceSq(a.latitude, a.longitude, nearLat, nearLon)
+            .compareTo(_distanceSq(b.latitude, b.longitude, nearLat, nearLon)),
+      );
+    }
+
+    dev.log('장소 검색 최종 결과: ${items.length}개', name: 'LocationSearch');
     return items;
+  }
+
+  static double _distanceSq(double lat1, double lon1, double lat2, double lon2) {
+    final dLat = lat1 - lat2;
+    final dLon = (lon1 - lon2) * cos((lat1 + lat2) / 2 * pi / 180);
+    return dLat * dLat + dLon * dLon;
   }
 }
 

@@ -230,7 +230,7 @@ class _WritePostScreenState extends ConsumerState<WritePostScreen> {
       dev.log('장소 꿀팁 작성 실패: $e', name: 'Write');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('장소 등록 중 오류가 발생했습니다. 다시 시도해주세요.')),
+          SnackBar(content: Text('장소 등록 오류: $e')),
         );
       }
     } finally {
