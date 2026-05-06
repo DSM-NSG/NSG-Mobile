@@ -3,9 +3,9 @@ import 'dart:developer';
 import 'package:nsg_mobile/core/network/api_client.dart';
 import 'package:nsg_mobile/core/network/api_endpoints.dart';
 import 'package:nsg_mobile/features/map/data/models/place_model.dart';
+import 'package:nsg_mobile/features/share/data/models/tips_post_model.dart';
 
 class PlaceService {
-  /// GET / — list all places, optionally filtered by API category string.
   static Future<List<PlaceModel>> getPlaces({String? category}) async {
     final response = await ApiClient.dio.get(
       ApiEndpoints.places,
@@ -28,11 +28,10 @@ class PlaceService {
         .toList();
   }
 
-  /// POST / — register a new place on the map.
   static Future<PlaceModel> createPlace({
     required String title,
     required String description,
-    required String category, // API value e.g. 'CAFE'
+    required String category,
     required double latitude,
     required double longitude,
     String naverMapUrl = '',
@@ -58,7 +57,23 @@ class PlaceService {
     return PlaceModel.fromJson(response.data as Map<String, dynamic>);
   }
 
-  /// DELETE /{id}/ — delete a place.
+  static Future<List<TipsPostDetailModel>> getPlacePosts(String placeId) async {
+    final response = await ApiClient.dio.get(ApiEndpoints.placePosts(placeId));
+    final data = response.data;
+    final List<dynamic> items;
+    if (data is List) {
+      items = data;
+    } else if (data is Map<String, dynamic> && data.containsKey('results')) {
+      items = data['results'] as List<dynamic>;
+    } else {
+      items = [];
+    }
+    return items
+        .whereType<Map<String, dynamic>>()
+        .map(TipsPostDetailModel.fromJson)
+        .toList();
+  }
+
   static Future<void> deletePlace(String id) async {
     await ApiClient.dio.delete(ApiEndpoints.placeDelete(id));
   }

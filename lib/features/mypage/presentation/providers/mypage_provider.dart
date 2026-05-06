@@ -32,7 +32,8 @@ final mypageProvider = FutureProvider<UserModel>((ref) async {
       cohort: savedUser?.cohort ?? user.cohort,
     );
     log(
-      '마이페이지 사용자 정보 조회 성공: ${merged.displayName} ${merged.studentNumberLabel}',
+      '마이페이지 사용자 정보 조회 성공: ${merged.displayName} '
+      '| /me 기수=${user.cohort} | 캐시 기수=${savedUser?.cohort} | 최종=${merged.cohort}',
       name: 'Mypage',
     );
     await AuthService.cacheUser(

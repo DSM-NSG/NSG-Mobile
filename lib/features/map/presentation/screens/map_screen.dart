@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -11,7 +12,9 @@ import 'package:nsg_mobile/constants/color.dart';
 import 'package:nsg_mobile/constants/text_style.dart';
 import 'package:nsg_mobile/core/components/nsg_search_bar.dart';
 import 'package:nsg_mobile/core/components/recent_post_card.dart';
+import 'package:nsg_mobile/features/map/data/services/place_service.dart';
 import 'package:nsg_mobile/features/map/presentation/providers/map_provider.dart';
+import 'package:nsg_mobile/features/share/presentation/providers/post_detail_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const _kFallbackCenter = LatLng(36.3807, 127.3862);
@@ -640,23 +643,80 @@ class _CategoryBadge extends StatelessWidget {
   }
 }
 
-class _PlaceBottomSheet extends StatelessWidget {
+class _PlaceBottomSheet extends ConsumerStatefulWidget {
   final PlaceGroup place;
   final LatLng? myLocation;
 
   const _PlaceBottomSheet({required this.place, this.myLocation});
 
+  @override
+  ConsumerState<_PlaceBottomSheet> createState() => _PlaceBottomSheetState();
+}
+
+class _PlaceBottomSheetState extends ConsumerState<_PlaceBottomSheet> {
+  final Map<String, String?> _tipsPostIdCache = {};
+  final Set<String> _loading = {};
+
+  Future<void> _onPostTap(String placeId) async {
+    final registry = ref.read(postDetailRegistryProvider);
+    if (registry.containsKey(placeId)) {
+      Navigator.of(context).pop();
+      context.push('/share/post/$placeId');
+      return;
+    }
+
+    if (_tipsPostIdCache.containsKey(placeId)) {
+      final tipsId = _tipsPostIdCache[placeId];
+      if (tipsId != null) {
+        Navigator.of(context).pop();
+        context.push('/share/post/$tipsId');
+      }
+      return;
+    }
+
+    setState(() => _loading.add(placeId));
+    try {
+      final tipsPosts = await PlaceService.getPlacePosts(placeId);
+
+      if (!mounted) return;
+
+      if (tipsPosts.isEmpty) {
+        setState(() { _tipsPostIdCache[placeId] = null; _loading.remove(placeId); });
+        log('장소($placeId)에 연결된 게시글 없음', name: 'MapBottomSheet');
+        return;
+      }
+
+      final tipsPost = tipsPosts.first;
+      final postDetail = tipsPost.toPostDetail();
+
+      ref.read(postDetailRegistryProvider.notifier).update(
+        (map) => {...map, tipsPost.id: postDetail},
+      );
+      _tipsPostIdCache[placeId] = tipsPost.id;
+      setState(() => _loading.remove(placeId));
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      context.push('/share/post/${tipsPost.id}');
+    } catch (e) {
+      log('장소 게시글 조회 실패: $e', name: 'MapBottomSheet');
+      if (mounted) setState(() => _loading.remove(placeId));
+    }
+  }
+
   Future<void> _openNaverMaps(BuildContext context) async {
-    final destinationName = Uri.encodeComponent(place.locationName);
-    final sourceQuery = myLocation != null
-        ? '&slat=${myLocation!.latitude}&slng=${myLocation!.longitude}&sname=${Uri.encodeComponent('현재 위치')}'
+    final destinationName = Uri.encodeComponent(widget.place.locationName);
+    final lat = widget.place.latitude;
+    final lng = widget.place.longitude;
+    final sourceQuery = widget.myLocation != null
+        ? '&slat=${widget.myLocation!.latitude}&slng=${widget.myLocation!.longitude}&sname=${Uri.encodeComponent('현재 위치')}'
         : '';
 
     final appUri = Uri.parse(
-      'nmap://route/public?dlat=${place.latitude}&dlng=${place.longitude}&dname=$destinationName$sourceQuery&appname=com.example.nsg_mobile',
+      'nmap://route/public?dlat=$lat&dlng=$lng&dname=$destinationName$sourceQuery&appname=com.example.nsg_mobile',
     );
     final webUri = Uri.parse(
-      'https://map.naver.com/v5/search/${Uri.encodeComponent(place.locationName)}',
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
     );
 
     if (await canLaunchUrl(appUri)) {
@@ -671,7 +731,7 @@ class _PlaceBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const String? image = null;
+    final place = widget.place;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
@@ -707,36 +767,16 @@ class _PlaceBottomSheet extends StatelessWidget {
                   children: [
                     Text(
                       place.locationName,
-                      style: NsgTextStyle.header1.copyWith(
-                        color: NsgColor.black800,
-                      ),
+                      style: NsgTextStyle.header1.copyWith(color: NsgColor.black800),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       place.locationAddress,
-                      style: NsgTextStyle.body4.copyWith(
-                        color: NsgColor.black400,
-                      ),
+                      style: NsgTextStyle.body4.copyWith(color: NsgColor.black400),
                     ),
                   ],
                 ),
               ),
-
-              if (image != null) ...[
-                const SizedBox(height: 14),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.asset(
-                      image,
-                      width: double.infinity,
-                      height: 160,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ],
 
               const SizedBox(height: 16),
               const Divider(height: 1, color: NsgColor.black100),
@@ -763,14 +803,12 @@ class _PlaceBottomSheet extends StatelessWidget {
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
                       itemCount: place.posts.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, i) {
+                      itemBuilder: (_, i) {
                         final post = place.posts[i];
+                        final isLoading = _loading.contains(post.id);
                         return RecentPostCard(
                           post: post,
-                          onTap: () {
-                            Navigator.of(context).pop();
-                            context.push('/share/post/${post.id}');
-                          },
+                          onTap: isLoading ? null : () => _onPostTap(post.id),
                         );
                       },
                     ),

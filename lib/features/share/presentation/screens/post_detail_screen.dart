@@ -9,6 +9,7 @@ import 'package:nsg_mobile/constants/color.dart';
 import 'package:nsg_mobile/constants/text_style.dart';
 import 'package:nsg_mobile/core/components/nsg_dialog.dart';
 import 'package:nsg_mobile/features/mypage/presentation/providers/mypage_provider.dart';
+import 'package:nsg_mobile/features/share/data/services/tips_service.dart';
 import 'package:nsg_mobile/features/share/domain/entities/comment.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post_detail.dart';
 import 'package:nsg_mobile/features/share/presentation/providers/post_detail_provider.dart';
@@ -27,6 +28,7 @@ class PostDetailScreen extends ConsumerStatefulWidget {
 
 class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   PostDetail? _post;
+  bool _isLoading = false;
   String? _showReplyBadgeId;
   String? _replyingToId;
   final _commentController = TextEditingController();
@@ -38,13 +40,28 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     super.initState();
     final registry = ref.read(postDetailRegistryProvider);
     _post = registry[widget.postId];
-    if (_post == null) {
-      log('게시글을 찾을 수 없음: postId=${widget.postId}', name: 'PostDetail');
+    if (_post != null) {
+      log('게시글 상세 진입: postId=${widget.postId}, title=${_post!.title}', name: 'PostDetail');
     } else {
-      log(
-        '게시글 상세 진입: postId=${widget.postId}, title=${_post!.title}',
-        name: 'PostDetail',
+      log('레지스트리 미등록, 서버 조회 시도: postId=${widget.postId}', name: 'PostDetail');
+      _fetchFromServer();
+    }
+  }
+
+  Future<void> _fetchFromServer() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+    try {
+      final model = await TipsService.getPostDetail(widget.postId);
+      final detail = model.toPostDetail();
+      ref.read(postDetailRegistryProvider.notifier).update(
+        (map) => {...map, widget.postId: detail},
       );
+      if (mounted) setState(() { _post = detail; _isLoading = false; });
+      log('서버 게시글 상세 로드 성공: postId=${widget.postId}', name: 'PostDetail');
+    } catch (e) {
+      log('서버 게시글 상세 로드 실패: $e', name: 'PostDetail');
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -119,6 +136,24 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: NsgColor.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              const Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(color: NsgColor.orange400),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (_post == null) {
       return Scaffold(
         backgroundColor: NsgColor.background,

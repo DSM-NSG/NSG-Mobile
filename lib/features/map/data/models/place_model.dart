@@ -1,6 +1,5 @@
 import 'package:nsg_mobile/features/share/domain/entities/post.dart';
 
-// ── Category helpers ──────────────────────────────────────────────────────────
 
 String _apiCategoryToApp(String api) =>
     const {
@@ -12,7 +11,6 @@ String _apiCategoryToApp(String api) =>
     }[api] ??
     '기타';
 
-/// Converts the app-side sub-category label to the Places API category string.
 String appCategoryToPlaceApi(String app) =>
     const {
       '카페': 'CAFE',
@@ -23,9 +21,7 @@ String appCategoryToPlaceApi(String app) =>
     }[app] ??
     'ETC';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
-/// Safely extracts an author name from a field that may be a String or an object.
 String _parseAuthor(dynamic raw, [String fallback = '익명']) {
   if (raw is String) return raw.isNotEmpty ? raw : fallback;
   if (raw is Map<String, dynamic>) {
@@ -34,14 +30,13 @@ String _parseAuthor(dynamic raw, [String fallback = '익명']) {
   return fallback;
 }
 
-// ── Model ─────────────────────────────────────────────────────────────────────
 
 class PlaceModel {
   final String id;
   final String author;
   final String title;
   final String description;
-  final String category; // API value: CAFE / PC_ROOM / KARAOKE / RESTAURANT / ETC
+  final String category;
   final double latitude;
   final double longitude;
   final String? naverMapUrl;
@@ -74,7 +69,6 @@ class PlaceModel {
         createdAt: json['created_at'] as String? ?? '',
       );
 
-  /// Maps to the shared [Post] domain entity used by the map providers.
   Post toPost() => Post(
         id: id,
         title: title,
@@ -82,7 +76,7 @@ class PlaceModel {
         category: '장소',
         subCategory: _apiCategoryToApp(category),
         locationName: title,
-        locationAddress: naverMapUrl ?? '',
+        locationAddress: '',
         latitude: latitude,
         longitude: longitude,
         likes: 0,

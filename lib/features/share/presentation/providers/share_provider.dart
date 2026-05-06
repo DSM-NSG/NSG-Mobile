@@ -1,6 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nsg_mobile/features/share/data/dummy/share_dummy_data.dart';
+import 'package:nsg_mobile/features/share/data/services/tips_service.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post.dart';
 
 @immutable
@@ -125,15 +128,8 @@ final shareFilteredPopularProvider =
       ref,
       params,
     ) {
-      final newPosts = ref.watch(shareNewPostsProvider);
-      final deleted = ref.watch(shareDeletedIdsProvider);
-      final posts =
-          newPosts
-              .where(
-                (p) => p.board == PostBoard.share && !deleted.contains(p.id),
-              )
-              .toList()
-            ..sort((a, b) => b.likes.compareTo(a.likes));
+      final posts = ref.watch(allTipsPostsProvider).toList()
+        ..sort((a, b) => b.likes.compareTo(a.likes));
       return _filterPosts(posts, params.query, params.category);
     });
 
@@ -142,11 +138,7 @@ final shareFilteredRecentProvider =
       ref,
       params,
     ) {
-      final newPosts = ref.watch(shareNewPostsProvider);
-      final deleted = ref.watch(shareDeletedIdsProvider);
-      final posts = newPosts
-          .where((p) => p.board == PostBoard.share && !deleted.contains(p.id))
-          .toList();
+      final posts = ref.watch(allTipsPostsProvider);
       return _filterPosts(posts, params.query, params.category);
     });
 
@@ -155,16 +147,9 @@ final shareSearchResultsProvider =
       ref,
       params,
     ) {
-      final newPosts = ref.watch(shareNewPostsProvider);
-      final deleted = ref.watch(shareDeletedIdsProvider);
       final seen = <String>{};
-      final all = newPosts
-          .where(
-            (p) =>
-                p.board == PostBoard.share &&
-                !deleted.contains(p.id) &&
-                seen.add(p.id),
-          )
+      final all = ref.watch(allTipsPostsProvider)
+          .where((p) => seen.add(p.id))
           .toList();
       return _filterPosts(all, params.query, params.category);
     });
@@ -197,3 +182,25 @@ final shareNewPostsProvider =
     );
 
 final shareDeletedIdsProvider = StateProvider<Set<String>>((ref) => {});
+
+final remoteTipsPostsProvider = FutureProvider<List<Post>>((ref) async {
+  try {
+    final posts = await TipsService.getPosts();
+    log('서버 꿀팁 게시글 조회 성공: ${posts.length}개', name: 'Share');
+    return posts.map((p) => p.toPost()).toList();
+  } catch (e) {
+    log('서버 꿀팁 게시글 조회 실패: $e', name: 'Share');
+    return [];
+  }
+});
+
+final allTipsPostsProvider = Provider<List<Post>>((ref) {
+  final remote = ref.watch(remoteTipsPostsProvider).valueOrNull ?? [];
+  final local = ref.watch(shareNewPostsProvider);
+  final deleted = ref.watch(shareDeletedIdsProvider);
+  final seen = <String>{};
+  return [
+    ...local.where((p) => p.board == PostBoard.share && !deleted.contains(p.id)),
+    ...remote.where((p) => !deleted.contains(p.id)),
+  ].where((p) => seen.add(p.id)).toList();
+});

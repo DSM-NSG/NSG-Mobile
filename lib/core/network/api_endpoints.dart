@@ -7,6 +7,7 @@ class ApiEndpoints {
   /// Places
   static const places = '/';
   static String placeDelete(String id) => '/$id/';
+  static String placePosts(String id) => '/$id/posts/';
 
   /// Api
   static const schema = '/api/schema/';

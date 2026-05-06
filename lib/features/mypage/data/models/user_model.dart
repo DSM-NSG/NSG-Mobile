@@ -37,10 +37,10 @@ class UserModel {
     return UserModel(
       userId: json['user_id'] as String,
       name: (json['name'] as String?)?.trim(),
-      grade: json['grade'] as int,
-      classNum: json['class_num'] as int,
-      num: json['num'] as int,
-      cohort: json['cohort'] as int,
+      grade: json['grade'] is int ? json['grade'] as int : int.tryParse('${json['grade']}') ?? 0,
+      classNum: json['class_num'] is int ? json['class_num'] as int : int.tryParse('${json['class_num']}') ?? 0,
+      num: json['num'] is int ? json['num'] as int : int.tryParse('${json['num']}') ?? 0,
+      cohort: json['cohort'] is int ? json['cohort'] as int : int.tryParse('${json['cohort']}') ?? 0,
     );
   }
 
