@@ -8,6 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:nsg_mobile/constants/color.dart';
 import 'package:nsg_mobile/constants/text_style.dart';
 import 'package:nsg_mobile/core/components/nsg_dialog.dart';
+import 'package:nsg_mobile/features/major/data/services/major_service.dart';
 import 'package:nsg_mobile/features/mypage/presentation/providers/mypage_provider.dart';
 import 'package:nsg_mobile/features/share/data/services/tips_service.dart';
 import 'package:nsg_mobile/features/share/domain/entities/comment.dart';
@@ -19,8 +20,13 @@ import 'package:uuid/uuid.dart';
 
 class PostDetailScreen extends ConsumerStatefulWidget {
   final String postId;
+  final bool isMajor;
 
-  const PostDetailScreen({super.key, required this.postId});
+  const PostDetailScreen({
+    super.key,
+    required this.postId,
+    this.isMajor = false,
+  });
 
   @override
   ConsumerState<PostDetailScreen> createState() => _PostDetailScreenState();
@@ -52,8 +58,14 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
-      final model = await TipsService.getPostDetail(widget.postId);
-      final detail = model.toPostDetail();
+      final PostDetail detail;
+      if (widget.isMajor) {
+        final model = await MajorService.getPostDetail(widget.postId);
+        detail = model.toPostDetail();
+      } else {
+        final model = await TipsService.getPostDetail(widget.postId);
+        detail = model.toPostDetail();
+      }
       ref.read(postDetailRegistryProvider.notifier).update(
         (map) => {...map, widget.postId: detail},
       );

@@ -103,7 +103,7 @@ class _DefaultContent extends ConsumerWidget {
               padding: const EdgeInsets.only(bottom: 10),
               child: RecentPostCard(
                 post: post,
-                onTap: () => context.push('/share/post/${post.id}'),
+                onTap: () => context.push('/major/post/${post.id}'),
               ),
             ),
           ),
@@ -181,7 +181,7 @@ class _SearchResultContent extends ConsumerWidget {
               padding: const EdgeInsets.only(bottom: 10),
               child: RecentPostCard(
                 post: post,
-                onTap: () => context.push('/share/post/${post.id}'),
+                onTap: () => context.push('/major/post/${post.id}'),
               ),
             ),
           ),

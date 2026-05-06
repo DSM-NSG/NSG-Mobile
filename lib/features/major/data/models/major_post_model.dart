@@ -2,6 +2,25 @@ import 'package:nsg_mobile/features/share/domain/entities/comment.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post_detail.dart';
 
+String _parseAuthor(dynamic raw, [String fallback = '알 수 없음']) {
+  if (raw is String) return raw.isNotEmpty ? raw : fallback;
+  if (raw is Map<String, dynamic>) {
+    return (raw['name'] as String?) ?? (raw['username'] as String?) ?? fallback;
+  }
+  return fallback;
+}
+
+String _parseMajors(dynamic raw) {
+  if (raw is String) return raw;
+  if (raw is List) {
+    return raw
+        .map((e) => e is Map ? (e['name'] ?? e['id'] ?? '') : '$e')
+        .where((s) => s.toString().isNotEmpty)
+        .join(', ');
+  }
+  return '';
+}
+
 // ── List item ────────────────────────────────────────────────────────────────
 
 class MajorPostModel {
@@ -25,9 +44,9 @@ class MajorPostModel {
 
   factory MajorPostModel.fromJson(Map<String, dynamic> json) => MajorPostModel(
     id: json['id'] as String,
-    author: json['author'] as String? ?? '알 수 없음',
+    author: _parseAuthor(json['author']),
     title: json['title'] as String? ?? '',
-    majors: json['majors'] as String? ?? '',
+    majors: _parseMajors(json['majors']),
     likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
     commentCount: (json['comment_count'] as num?)?.toInt() ?? 0,
     createdAt: json['created_at'] as String? ?? '',
@@ -64,7 +83,7 @@ class MajorCommentModel {
   factory MajorCommentModel.fromJson(Map<String, dynamic> json) =>
       MajorCommentModel(
         id: json['id'] as String? ?? '',
-        author: json['author'] as String? ?? '알 수 없음',
+        author: _parseAuthor(json['author']),
         content: json['content'] as String? ?? '',
         isAnonymous: json['is_anonymous'] == true,
         parentId: json['parent_id'] as String?,
@@ -123,10 +142,10 @@ class MajorPostDetailModel {
 
     return MajorPostDetailModel(
       id: json['id'] as String,
-      author: json['author'] as String? ?? '알 수 없음',
+      author: _parseAuthor(json['author']),
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
-      majors: json['majors'] as String? ?? '',
+      majors: _parseMajors(json['majors']),
       isAnonymous: json['is_anonymous'] == true,
       likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
       isLiked: json['is_liked'] == true,

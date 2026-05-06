@@ -59,7 +59,7 @@ class MajorPostListScreen extends ConsumerWidget {
                         separatorBuilder: (_, __) => const SizedBox(height: 10),
                         itemBuilder: (_, i) => RecentPostCard(
                           post: sorted[i],
-                          onTap: () => context.push('/share/post/${sorted[i].id}'),
+                          onTap: () => context.push('/major/post/${sorted[i].id}'),
                         ),
                       ),
               ),

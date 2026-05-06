@@ -1,6 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nsg_mobile/features/major/data/dummy/major_dummy_data.dart';
+import 'package:nsg_mobile/features/major/data/services/major_service.dart';
 import 'package:nsg_mobile/features/share/domain/entities/post.dart';
 import 'package:nsg_mobile/features/share/presentation/providers/share_provider.dart';
 
@@ -102,26 +105,41 @@ List<Post> _filterMajorPosts(List<Post> posts, String? query) {
       .toList();
 }
 
+final remoteMajorPostsProvider = FutureProvider<List<Post>>((ref) async {
+  try {
+    final posts = await MajorService.getPosts();
+    log('서버 전공 게시글 조회 성공: ${posts.length}개', name: 'Major');
+    return posts.map((p) => p.toPost()).toList();
+  } catch (e) {
+    log('서버 전공 게시글 조회 실패: $e', name: 'Major');
+    return [];
+  }
+});
+
+final allMajorPostsProvider = Provider<List<Post>>((ref) {
+  final remote = ref.watch(remoteMajorPostsProvider).valueOrNull ?? [];
+  final local = ref.watch(shareNewPostsProvider);
+  final deleted = ref.watch(shareDeletedIdsProvider);
+  final seen = <String>{};
+  return [
+    ...local.where((p) => p.board == PostBoard.major && !deleted.contains(p.id)),
+    ...remote.where((p) => !deleted.contains(p.id)),
+  ].where((p) => seen.add(p.id)).toList();
+});
+
 final majorPopularPostsProvider = Provider.family<List<Post>, String?>((
   ref,
   query,
 ) {
-  final newPosts = ref.watch(shareNewPostsProvider);
-  final deleted = ref.watch(shareDeletedIdsProvider);
-  final majorPosts = newPosts
-      .where((p) => p.board == PostBoard.major && !deleted.contains(p.id))
-      .toList();
-  return _filterMajorPosts(majorPosts, query);
+  final posts = ref.watch(allMajorPostsProvider).toList()
+    ..sort((a, b) => b.likes.compareTo(a.likes));
+  return _filterMajorPosts(posts, query);
 });
 
 final majorRecentPostsProvider = Provider.family<List<Post>, String?>((
   ref,
   query,
 ) {
-  final newPosts = ref.watch(shareNewPostsProvider);
-  final deleted = ref.watch(shareDeletedIdsProvider);
-  final majorPosts = newPosts
-      .where((p) => p.board == PostBoard.major && !deleted.contains(p.id))
-      .toList();
-  return _filterMajorPosts(majorPosts, query);
+  final posts = ref.watch(allMajorPostsProvider);
+  return _filterMajorPosts(posts, query);
 });

@@ -29,7 +29,7 @@ final mypageProvider = FutureProvider<UserModel>((ref) async {
       grade: savedUser?.grade ?? user.grade,
       classNum: savedUser?.classNum ?? user.classNum,
       num: savedUser?.num ?? user.num,
-      cohort: savedUser?.cohort ?? user.cohort,
+      cohort: user.cohort > 0 ? user.cohort : (savedUser?.cohort ?? 0),
     );
     log(
       '마이페이지 사용자 정보 조회 성공: ${merged.displayName} '

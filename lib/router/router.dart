@@ -114,6 +114,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
                     path: 'recent',
                     builder: (_, __) => const MajorPostListScreen(type: MajorPostListType.recent),
                   ),
+                  GoRoute(
+                    path: 'post/:postId',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => PostDetailScreen(
+                      postId: state.pathParameters['postId']!,
+                      isMajor: true,
+                    ),
+                  ),
                 ],
               ),
             ],

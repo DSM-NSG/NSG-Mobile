@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -27,6 +29,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   LatLng? _myLocation;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -39,6 +42,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     _focusNode.dispose();
     _mapController.dispose();
@@ -64,6 +68,11 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
       _mapController.move(latLng, _kSearchZoom);
       setState(() => _myLocation = latLng);
     } catch (_) {}
+  }
+
+  void _onSearchChanged(String query) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () => _search(query));
   }
 
   Future<void> _search(String query) async {
@@ -132,7 +141,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
             _SearchBar(
               controller: _searchController,
               focusNode: _focusNode,
-              onChanged: _search,
+              onChanged: _onSearchChanged,
               onSubmitted: _search,
               onBack: () => Navigator.of(context).pop(),
             ),
